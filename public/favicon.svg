@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AureBid">
+  <rect width="64" height="64" rx="14" fill="#0b0e13"/>
+  <path d="M32 11 51 50h-8.6L32 26.4 21.6 50H13L32 11Z" fill="#d6b25e"/>
+  <path d="M32 33.5 40.4 50H23.6L32 33.5Z" fill="#f1d694"/>
+  <circle cx="32" cy="55.5" r="2.2" fill="#d6b25e"/>
+</svg>
