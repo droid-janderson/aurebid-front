@@ -1,17 +1,17 @@
-import type { LotListFilters } from '@/types/domain';
+import type { BatchListFilters } from '@/types/domain';
 
 export const queryKeys = {
   auth: ['auth'] as const,
-  lots: {
-    all: ['lots'] as const,
-    list: (filters: LotListFilters) => ['lots', 'list', filters] as const,
-    detail: (lotId: string) => ['lots', 'detail', lotId] as const,
-    managed: (lotId: string) => ['lots', 'managed', lotId] as const,
-    mine: (filters: LotListFilters) => ['lots', 'mine', filters] as const,
-    summary: ['lots', 'mine', 'summary'] as const,
+  batchs: {
+    all: ['batchs'] as const,
+    list: (filters: BatchListFilters) => ['batchs', 'list', filters] as const,
+    detail: (batchId: string) => ['batchs', 'detail', batchId] as const,
+    managed: (batchId: string) => ['batchs', 'managed', batchId] as const,
+    mine: (filters: BatchListFilters) => ['batchs', 'mine', filters] as const,
+    summary: ['batchs', 'mine', 'summary'] as const,
   },
   bids: {
-    lot: (lotId: string) => ['bids', 'lot', lotId] as const,
+    batch: (batchId: string) => ['bids', 'batch', batchId] as const,
     mine: ['bids', 'mine'] as const,
   },
   wallet: {
@@ -23,8 +23,8 @@ export const queryKeys = {
     byToken: (token: string) => ['settlements', 'token', token] as const,
   },
   audit: {
-    entries: (lotId: string) => ['audit', 'entries', lotId] as const,
-    verify: (lotId: string) => ['audit', 'verify', lotId] as const,
+    entries: (batchId: string) => ['audit', 'entries', batchId] as const,
+    verify: (batchId: string) => ['audit', 'verify', batchId] as const,
   },
   catalog: {
     search: (term: string, page: number) =>

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -10,12 +11,12 @@ import {
   ShieldAlert,
   ShieldCheck,
 } from 'lucide-react';
-import { lotsService } from '@/services/lots.service';
+import { batchsService } from '@/services/batchs.service';
 import { auditService } from '@/services/audit.service';
 import { queryKeys } from '@/services/query-keys';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { LotStatusBadge } from '@/components/ui/Badge';
+import { BatchStatusBadge } from '@/components/ui/Badge';
 import { Button, buttonStyles } from '@/components/ui/Button';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -24,7 +25,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { formatBRL } from '@/utils/money';
 import { formatDateTime } from '@/utils/datetime';
 import { presentError } from '@/utils/errors';
-import { pseudonymFor, publicLotCode } from '@/utils/pseudonym';
+import { pseudonymFor, publicBatchCode } from '@/utils/pseudonym';
 import { cn } from '@/utils/cn';
 
 const verificationCopy = {
@@ -55,29 +56,39 @@ const verificationCopy = {
 } as const;
 
 export function PublicAuditPage() {
-  const { lotId } = useParams<{ lotId: string }>();
+  const { batchId } = useParams<{ batchId: string }>();
   useDocumentTitle('Auditoria pública');
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
 
-  const lotQuery = useQuery({
-    queryKey: queryKeys.lots.detail(lotId ?? ''),
-    queryFn: () => lotsService.get(lotId!),
-    enabled: Boolean(lotId),
+  const batchQuery = useQuery({
+    queryKey: queryKeys.batchs.detail(batchId ?? ''),
+    queryFn: () => batchsService.get(batchId!),
+    enabled: Boolean(batchId),
   });
 
   const auditQuery = useQuery({
-    queryKey: queryKeys.audit.entries(lotId ?? ''),
-    queryFn: () => auditService.list(lotId!),
-    enabled: Boolean(lotId),
+    queryKey: queryKeys.audit.entries(batchId ?? ''),
+    queryFn: () => auditService.list(batchId!),
+    enabled: Boolean(batchId),
   });
 
   const verifyQuery = useQuery({
-    queryKey: queryKeys.audit.verify(lotId ?? ''),
-    queryFn: () => auditService.verify(lotId!),
-    enabled: Boolean(lotId),
+    queryKey: queryKeys.audit.verify(batchId ?? ''),
+    queryFn: () => auditService.verify(batchId!),
+    enabled: Boolean(batchId),
     retry: false,
   });
 
-  if (!lotId) {
+  if (!batchId) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20">
         <ErrorState title="Lote não informado" message="O endereço está incompleto." />
@@ -85,7 +96,7 @@ export function PublicAuditPage() {
     );
   }
 
-  if (lotQuery.isPending) {
+  if (batchQuery.isPending) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
         <Skeleton className="h-4 w-32" />
@@ -97,14 +108,14 @@ export function PublicAuditPage() {
     );
   }
 
-  if (lotQuery.isError || !lotQuery.data) {
-    const error = presentError(lotQuery.error);
+  if (batchQuery.isError || !batchQuery.data) {
+    const error = presentError(batchQuery.error);
     return (
       <div className="mx-auto max-w-3xl px-4 py-20">
         <ErrorState
           title={error.title}
           message={error.message}
-          onRetry={() => void lotQuery.refetch()}
+          onRetry={() => void batchQuery.refetch()}
           action={
             <Link to="/" className={buttonStyles('secondary', 'sm')}>
               Ver vitrine
@@ -115,7 +126,7 @@ export function PublicAuditPage() {
     );
   }
 
-  const lot = lotQuery.data;
+  const batch = batchQuery.data;
   const entries = auditQuery.data ?? [];
   const verification = verifyQuery.data;
   const copy = verification ? verificationCopy[verification.status] : null;
@@ -125,7 +136,7 @@ export function PublicAuditPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
       <Link
-        to={`/lotes/${lot.id}`}
+        to={`/lotes/${batch.id}`}
         className="inline-flex items-center gap-2 text-xs font-medium text-mist transition-colors hover:text-chalk"
       >
         <ArrowLeft aria-hidden="true" className="size-3.5" />
@@ -134,7 +145,7 @@ export function PublicAuditPage() {
 
       <PageHeader
         className="mt-5"
-        eyebrow={`Auditoria pública · lote ${publicLotCode(lot.id)}`}
+        eyebrow={`Auditoria pública · lote ${publicBatchCode(batch.id)}`}
         title={
           <>
             A trilha dos <em>lances.</em>
@@ -143,14 +154,22 @@ export function PublicAuditPage() {
         description="Sequência, horário e hashes registrados pelo servidor para cada lance deste lote. A verificação de integridade é uma responsabilidade do backend."
         actions={
           <>
-            <LotStatusBadge status={lot.status} />
+            <BatchStatusBadge status={batch.status} />
             <Link
-              to={`/lotes/${lot.id}`}
+              to={`/lotes/${batch.id}`}
               className={buttonStyles('secondary', 'sm')}
             >
               Abrir lote
               <ArrowRight aria-hidden="true" className="size-3.5" />
             </Link>
+            <button
+              type="button"
+              onClick={() => void handleCopy()}
+              className={buttonStyles('ghost', 'sm')}
+            >
+              <Link2 aria-hidden="true" className="size-3.5" />
+              {copied ? 'Link copiado' : 'Copiar link'}
+            </button>
           </>
         }
       />
@@ -160,10 +179,10 @@ export function PublicAuditPage() {
           <p className="text-[0.625rem] tracking-[0.08em] text-mist-dim uppercase">
             Lote
           </p>
-          <p className="mt-1.5 truncate text-sm font-medium text-chalk">{lot.title}</p>
+          <p className="mt-1.5 truncate text-sm font-medium text-chalk">{batch.title}</p>
           <p className="numeric mt-0.5 text-[0.6875rem] text-mist-dim">
-            {lot.bidCount} {lot.bidCount === 1 ? 'lance' : 'lances'} ·{' '}
-            {formatBRL(lot.currentPrice)}
+            {batch.bidCount} {batch.bidCount === 1 ? 'lance' : 'lances'} ·{' '}
+            {formatBRL(batch.currentPrice)}
           </p>
         </div>
         <div className="surface-soft p-4">
@@ -180,7 +199,7 @@ export function PublicAuditPage() {
             Encerramento
           </p>
           <p className="numeric mt-1.5 text-sm text-chalk">
-            {formatDateTime(lot.endsAt)}
+            {formatDateTime(batch.endsAt)}
           </p>
           <p className="mt-0.5 text-[0.6875rem] text-mist-dim">
             horário oficial do servidor
@@ -269,7 +288,7 @@ export function PublicAuditPage() {
                     : entry.previousHash === entries[index - 1].currentHash;
                 return (
                   <li
-                    key={entry.bid.id}
+                    key={entry.bidId}
                     className="border-b border-line/60 bg-raised/30 px-4 py-3 last:border-b-0"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -279,10 +298,10 @@ export function PublicAuditPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                           <p className="text-[0.8125rem] font-medium text-chalk">
-                            {pseudonymFor(entry.bid.bidder.id)}
+                            {pseudonymFor(entry.bidder.id ?? '')}
                           </p>
                           <span className="numeric text-[0.8125rem] text-gold-bright">
-                            {formatBRL(entry.bid.amount)}
+                            {formatBRL(entry.amount)}
                           </span>
                           <span className="text-[0.625rem] text-mist-dim">
                             {formatDateTime(entry.createdAt)}
@@ -330,7 +349,7 @@ export function PublicAuditPage() {
       </section>
 
       <div className="mt-8 flex flex-wrap gap-2">
-        <Link to={`/lotes/${lot.id}`} className={buttonStyles('secondary', 'sm')}>
+        <Link to={`/lotes/${batch.id}`} className={buttonStyles('secondary', 'sm')}>
           <ArrowLeft aria-hidden="true" className="size-3.5" />
           Voltar ao lote
         </Link>

@@ -24,7 +24,7 @@ import { formatBRL } from '@/utils/money';
 import { formatDateTime } from '@/utils/datetime';
 import { presentError } from '@/utils/errors';
 import { toApiError } from '@/services/api-error';
-import { pseudonymFor, publicLotCode } from '@/utils/pseudonym';
+import { pseudonymFor, publicBatchCode } from '@/utils/pseudonym';
 
 export function ReceiptPage() {
   const { token } = useParams<{ token: string }>();
@@ -134,11 +134,11 @@ export function ReceiptPage() {
             <div>
               <p className="eyebrow">Arremate</p>
               <h1 className="display mt-2 text-3xl text-chalk sm:text-4xl">
-                {settlement.lot?.title ?? 'Lote'}
+                {settlement.batch?.title ?? 'Lote'}
               </h1>
               <p className="mt-1 font-mono text-[0.625rem] tracking-[0.12em] text-mist-dim uppercase">
-                Lote {publicLotCode(settlement.lotId)} ·{' '}
-                {settlement.lot?.status ?? 'status não informado'}
+                Lote {publicBatchCode(settlement.batchId)} ·{' '}
+                {settlement.batch?.status ?? 'status não informado'}
               </p>
             </div>
             <SettlementStatusBadge status={settlement.status} />
@@ -149,8 +149,8 @@ export function ReceiptPage() {
           <div>
             <div className="flex items-start gap-4">
               <CardImage
-                src={settlement.lot?.imageUrl}
-                alt={`Carta ${settlement.lot?.title ?? 'arrematada'}`}
+                src={settlement.batch?.imageUrl}
+                alt={`Carta ${settlement.batch?.title ?? 'arrematada'}`}
                 className="h-28 w-20 shrink-0 rounded-lg"
               />
               <div className="min-w-0">
@@ -204,7 +204,7 @@ export function ReceiptPage() {
                   Encerramento do lote
                 </dt>
                 <dd className="numeric mt-0.5 text-[0.8125rem] text-chalk">
-                  {formatDateTime(settlement.lot?.endsAt)}
+                  {formatDateTime(settlement.batch?.endsAt)}
                 </dd>
               </div>
               <div>
@@ -267,7 +267,7 @@ export function ReceiptPage() {
                 pública do lote.
               </p>
               <Link
-                to={`/lotes/${settlement.lotId}/auditoria`}
+                to={`/lotes/${settlement.batchId}/auditoria`}
                 className="mt-2 inline-flex items-center gap-1 text-[0.625rem] font-medium text-gold hover:text-gold-bright"
               >
                 Abrir auditoria do lote

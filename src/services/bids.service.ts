@@ -2,16 +2,16 @@ import type { Bid } from '@/types/domain';
 import { buildQuery, request, requestWithMeta } from '@/services/http';
 
 export const bidsService = {
-  place(lotId: string, amount: number) {
-    return request<Bid>(`/auctions/${encodeURIComponent(lotId)}/bids`, {
+  place(batchId: string, amount: number) {
+    return request<Bid>(`/auctions/${encodeURIComponent(batchId)}/bids`, {
       method: 'POST',
       body: { amount },
     });
   },
 
-  listForLot(lotId: string, page = 1, limit = 20) {
+  listForLot(batchId: string, page = 1, limit = 20) {
     return requestWithMeta<Bid>(
-      `/auctions/${encodeURIComponent(lotId)}/bids${buildQuery({ page, limit })}`,
+      `/auctions/${encodeURIComponent(batchId)}/bids${buildQuery({ page, limit })}`,
     );
   },
 
@@ -19,9 +19,9 @@ export const bidsService = {
     return requestWithMeta<Bid>(`/bids${buildQuery({ page, limit })}`);
   },
 
-  listMineForLot(lotId: string, page = 1, limit = 20) {
+  listMineForLot(batchId: string, page = 1, limit = 20) {
     return requestWithMeta<Bid>(
-      `/bids${buildQuery({ page, limit, lotId })}`,
+      `/bids${buildQuery({ page, limit, batchId })}`,
     );
   },
 };

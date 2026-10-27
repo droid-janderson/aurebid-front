@@ -12,17 +12,17 @@ import {
   Sparkles,
   Timer,
 } from 'lucide-react';
-import { lotsService } from '@/services/lots.service';
+import { batchsService } from '@/services/batchs.service';
 import { queryKeys } from '@/services/query-keys';
-import type { LotListFilters } from '@/types/domain';
+import type { BatchListFilters } from '@/types/domain';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { presentError } from '@/utils/errors';
-import { LotSpotlight } from '@/components/lots/LotSpotlight';
-import { LotCard } from '@/components/lots/LotCard';
-import { LotFilters, type LotFilterState } from '@/components/lots/LotFilters';
-import { Pagination } from '@/components/lots/Pagination';
-import { LotGridSkeleton, Skeleton } from '@/components/ui/Skeleton';
+import { BatchSpotlight } from '@/components/batchs/BatchSpotlight';
+import { BatchCard } from '@/components/batchs/BatchCard';
+import { BatchFilters, type BatchFilterState } from '@/components/batchs/BatchFilters';
+import { Pagination } from '@/components/batchs/Pagination';
+import { BatchGridSkeleton, Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { SectionHeader } from '@/components/layout/PageHeader';
@@ -51,7 +51,7 @@ const trustItems = [
 
 export function HomePage() {
   useDocumentTitle();
-  const [filters, setFilters] = useState<LotFilterState>({
+  const [filters, setFilters] = useState<BatchFilterState>({
     search: '',
     status: '',
     sort: 'ending',
@@ -59,10 +59,10 @@ export function HomePage() {
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebouncedValue(filters.search, 350);
 
-  const queryFilters = useMemo<LotListFilters>(() => {
+  const queryFilters = useMemo<BatchListFilters>(() => {
     const sortMap: Record<
-      LotFilterState['sort'],
-      Pick<LotListFilters, 'sortBy' | 'sortOrder'>
+      BatchFilterState['sort'],
+      Pick<BatchListFilters, 'sortBy' | 'sortOrder'>
     > = {
       ending: { sortBy: 'endsAt', sortOrder: 'asc' },
       startingPrice: { sortBy: 'startingPrice', sortOrder: 'asc' },
@@ -79,15 +79,15 @@ export function HomePage() {
   }, [filters.status, filters.sort, debouncedSearch, page]);
 
   const lotsQuery = useQuery({
-    queryKey: queryKeys.lots.list(queryFilters),
-    queryFn: () => lotsService.list(queryFilters),
+    queryKey: queryKeys.batchs.list(queryFilters),
+    queryFn: () => batchsService.list(queryFilters),
     placeholderData: keepPreviousData,
   });
 
   const spotlightQuery = useQuery({
-    queryKey: ['lots', 'spotlight', 'active'],
+    queryKey: ['batchs', 'spotlight', 'active'],
     queryFn: () =>
-      lotsService.list({
+      batchsService.list({
         status: 'ACTIVE',
         limit: 6,
         sortBy: 'endsAt',
@@ -102,7 +102,7 @@ export function HomePage() {
   }, [spotlightQuery.data]);
 
   const error = lotsQuery.error ? presentError(lotsQuery.error) : null;
-  const updateFilters = (next: LotFilterState) => {
+  const updateFilters = (next: BatchFilterState) => {
     setFilters(next);
     setPage(1);
   };
@@ -172,7 +172,7 @@ export function HomePage() {
             </div>
           </div>
         ) : spotlight ? (
-          <LotSpotlight lot={spotlight} />
+          <BatchSpotlight batch={spotlight} />
         ) : (
           <EmptyState
             icon={Gavel}
@@ -201,7 +201,7 @@ export function HomePage() {
           }
         />
 
-        <LotFilters
+        <BatchFilters
           value={filters}
           onChange={updateFilters}
           className="mt-5"
@@ -209,7 +209,7 @@ export function HomePage() {
 
         <div className="mt-6">
           {lotsQuery.isPending ? (
-            <LotGridSkeleton count={8} />
+            <BatchGridSkeleton count={8} />
           ) : error ? (
             <ErrorState
               title={error.title}
@@ -218,8 +218,8 @@ export function HomePage() {
             />
           ) : lotsQuery.data && lotsQuery.data.data.length > 0 ? (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {lotsQuery.data.data.map((lot) => (
-                <LotCard key={lot.id} lot={lot} />
+              {lotsQuery.data.data.map((batch) => (
+                <BatchCard key={batch.id} batch={batch} />
               ))}
             </div>
           ) : (

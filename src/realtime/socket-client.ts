@@ -76,16 +76,16 @@ export class SocketRealtimeClient implements RealtimeClient {
     this.setStatus('disconnected');
   }
 
-  joinLot(lotId: string) {
-    if (this.rooms.has(lotId)) return;
-    this.rooms.add(lotId);
-    if (this.socket?.connected) this.socket.emit('auction:join', lotId);
+  joinLot(batchId: string) {
+    if (this.rooms.has(batchId)) return;
+    this.rooms.add(batchId);
+    if (this.socket?.connected) this.socket.emit('auction:join', batchId);
   }
 
-  leaveLot(lotId: string) {
-    if (!this.rooms.has(lotId)) return;
-    this.rooms.delete(lotId);
-    if (this.socket?.connected) this.socket.emit('auction:leave', lotId);
+  leaveLot(batchId: string) {
+    if (!this.rooms.has(batchId)) return;
+    this.rooms.delete(batchId);
+    if (this.socket?.connected) this.socket.emit('auction:leave', batchId);
   }
 
   on<K extends keyof RealtimeEventMap>(

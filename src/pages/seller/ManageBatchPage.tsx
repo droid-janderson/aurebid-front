@@ -15,13 +15,13 @@ import {
   ShieldCheck,
   Trash2,
 } from 'lucide-react';
-import type { Lot, UpdateLotInput } from '@/types/domain';
-import { lotsService } from '@/services/lots.service';
+import type { Batch, UpdateBatchInput } from '@/types/domain';
+import { batchsService } from '@/services/batchs.service';
 import { queryKeys } from '@/services/query-keys';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useToast } from '@/components/ui/Toast';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { LotStatusBadge, SettlementStatusBadge } from '@/components/ui/Badge';
+import { BatchStatusBadge, SettlementStatusBadge } from '@/components/ui/Badge';
 import { FieldWrapper, Input, Select, Textarea } from '@/components/ui/Field';
 import { Button, buttonStyles } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/Dialog';
@@ -41,7 +41,7 @@ import {
   zonedInputToIso,
 } from '@/utils/datetime';
 import { primaryCardImage, cardSummaryLine } from '@/utils/product';
-import { publicLotCode } from '@/utils/pseudonym';
+import { publicBatchCode } from '@/utils/pseudonym';
 
 const schema = z
   .object({
@@ -81,24 +81,24 @@ const schema = z
     }
   });
 
-type LotForm = z.infer<typeof schema>;
+type BatchForm = z.infer<typeof schema>;
 
 type PendingAction = 'publish' | 'cancel' | 'delete' | 'end' | null;
 
-function formValues(lot: Lot): LotForm {
+function formValues(batch: Batch): BatchForm {
   return {
-    title: lot.title,
-    description: lot.description ?? '',
-    startingPrice: formatAmountInput(lot.startingPrice),
-    minimumIncrement: formatAmountInput(lot.minimumIncrement),
-    startsAt: toZonedInputValue(lot.startsAt),
-    endsAt: toZonedInputValue(lot.endsAt),
-    status: lot.status === 'DRAFT' ? 'DRAFT' : 'SCHEDULED',
+    title: batch.title,
+    description: batch.description ?? '',
+    startingPrice: formatAmountInput(batch.startingPrice),
+    minimumIncrement: formatAmountInput(batch.minimumIncrement),
+    startsAt: toZonedInputValue(batch.startsAt),
+    endsAt: toZonedInputValue(batch.endsAt),
+    status: batch.status === 'DRAFT' ? 'DRAFT' : 'SCHEDULED',
   };
 }
 
-export function ManageLotPage() {
-  const { lotId } = useParams<{ lotId: string }>();
+export function ManageBatchPage() {
+  const { batchId } = useParams<{ batchId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { push } = useToast();
@@ -106,14 +106,14 @@ export function ManageLotPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [formError, setFormError] = useState<ErrorPresentation | null>(null);
 
-  const lotQuery = useQuery({
-    queryKey: queryKeys.lots.managed(lotId ?? ''),
-    queryFn: () => lotsService.getManaged(lotId!),
-    enabled: Boolean(lotId),
+  const batchQuery = useQuery({
+    queryKey: queryKeys.batchs.managed(batchId ?? ''),
+    queryFn: () => batchsService.getManaged(batchId!),
+    enabled: Boolean(batchId),
   });
 
-  const lot = lotQuery.data;
-  useDocumentTitle(lot ? `Gerenciar ${lot.title}` : 'Gerenciar lote');
+  const batch = batchQuery.data;
+  useDocumentTitle(batch ? `Gerenciar ${batch.title}` : 'Gerenciar lote');
 
   const {
     register,
@@ -121,10 +121,10 @@ export function ManageLotPage() {
     setError,
     reset,
     formState: { errors, isSubmitting, isDirty },
-  } = useForm<LotForm>({
+  } = useForm<BatchForm>({
     resolver: zodResolver(schema),
-    defaultValues: lot
-      ? formValues(lot)
+    defaultValues: batch
+      ? formValues(batch)
       : {
           title: '',
           description: '',
@@ -137,22 +137,22 @@ export function ManageLotPage() {
   });
 
   useEffect(() => {
-    if (lot) reset(formValues(lot));
-  }, [lot, reset]);
+    if (batch) reset(formValues(batch));
+  }, [batch, reset]);
 
   const invalidate = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.lots.all }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.lots.summary }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.lots.managed(lotId ?? '') }),
-      ...(lotId
-        ? [queryClient.invalidateQueries({ queryKey: queryKeys.lots.detail(lotId) })]
+      queryClient.invalidateQueries({ queryKey: queryKeys.batchs.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.batchs.summary }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.batchs.managed(batchId ?? '') }),
+      ...(batchId
+        ? [queryClient.invalidateQueries({ queryKey: queryKeys.batchs.detail(batchId) })]
         : []),
     ]);
   };
 
   const save = handleSubmit(async (values) => {
-    if (!lot) return;
+    if (!batch) return;
     setFormError(null);
     const startingPrice = parseBRLInput(values.startingPrice);
     const minimumIncrement = parseBRLInput(values.minimumIncrement);
@@ -168,7 +168,7 @@ export function ManageLotPage() {
       return;
     }
 
-    const payload: UpdateLotInput = {
+    const payload: UpdateBatchInput = {
       title: values.title,
       description: values.description.trim() || undefined,
       startingPrice,
@@ -179,7 +179,7 @@ export function ManageLotPage() {
     };
 
     try {
-      const updated = await lotsService.update(lot.id, payload);
+      const updated = await batchsService.update(batch.id, payload);
       push({
         title: 'Lote atualizado',
         description: 'As alterações foram confirmadas pelo servidor.',
@@ -199,23 +199,23 @@ export function ManageLotPage() {
   });
 
   const runAction = async () => {
-    if (!lot || !pendingAction) return;
+    if (!batch || !pendingAction) return;
     setActionLoading(true);
     setFormError(null);
     try {
       if (pendingAction === 'publish') {
-        await lotsService.publish(lot.id);
+        await batchsService.publish(batch.id);
         push({
           title: 'Lote publicado',
           description:
-            lot.startsAt <= new Date().toISOString()
+            batch.startsAt <= new Date().toISOString()
               ? 'O lote está ao vivo e recebe lances.'
               : 'O lote está agendado para a data definida.',
           tone: 'success',
         });
       }
       if (pendingAction === 'cancel') {
-        await lotsService.cancel(lot.id);
+        await batchsService.cancel(batch.id);
         push({
           title: 'Lote cancelado',
           description: 'As reservas vinculadas a este lote foram liberadas.',
@@ -223,7 +223,7 @@ export function ManageLotPage() {
         });
       }
       if (pendingAction === 'end') {
-        await lotsService.end(lot.id);
+        await batchsService.end(batch.id);
         push({
           title: 'Leilão encerrado',
           description: 'A apuração e a liquidação seguem no servidor.',
@@ -231,14 +231,14 @@ export function ManageLotPage() {
         });
       }
       if (pendingAction === 'delete') {
-        await lotsService.remove(lot.id);
+        await batchsService.remove(batch.id);
         push({ title: 'Rascunho excluído', tone: 'info' });
         await invalidate();
         navigate('/painel');
         return;
       }
       await invalidate();
-      await lotQuery.refetch();
+      await batchQuery.refetch();
     } catch (error) {
       const presentation = presentError(error);
       setFormError(presentation);
@@ -253,7 +253,7 @@ export function ManageLotPage() {
     }
   };
 
-  if (!lotId) {
+  if (!batchId) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20">
         <ErrorState title="Lote não informado" message="O endereço está incompleto." />
@@ -261,7 +261,7 @@ export function ManageLotPage() {
     );
   }
 
-  if (lotQuery.isPending) {
+  if (batchQuery.isPending) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
         <Skeleton className="h-4 w-32" />
@@ -274,14 +274,14 @@ export function ManageLotPage() {
     );
   }
 
-  if (lotQuery.isError || !lot) {
-    const error = presentError(lotQuery.error);
+  if (batchQuery.isError || !batch) {
+    const error = presentError(batchQuery.error);
     return (
       <div className="mx-auto max-w-3xl px-4 py-20">
         <ErrorState
           title={error.title}
           message={error.message}
-          onRetry={() => void lotQuery.refetch()}
+          onRetry={() => void batchQuery.refetch()}
           action={
             <Link to="/painel" className={buttonStyles('secondary', 'sm')}>
               Voltar ao painel
@@ -292,10 +292,10 @@ export function ManageLotPage() {
     );
   }
 
-  const editable = lot.status === 'DRAFT' || lot.status === 'SCHEDULED';
-  const canDelete = lot.status === 'DRAFT';
-  const canCancel = !['ENDED', 'SETTLED', 'CANCELLED'].includes(lot.status);
-  const canEnd = lot.status === 'ACTIVE';
+  const editable = batch.status === 'DRAFT' || batch.status === 'SCHEDULED';
+  const canDelete = batch.status === 'DRAFT';
+  const canCancel = !['ENDED', 'SETTLED', 'CANCELLED'].includes(batch.status);
+  const canEnd = batch.status === 'ACTIVE';
   const canPublish = editable;
 
   const confirmCopy: Record<Exclude<PendingAction, null>, { title: string; description: string; label: string; tone: 'danger' | 'primary' }> = {
@@ -341,8 +341,8 @@ export function ManageLotPage() {
 
       <PageHeader
         className="mt-5"
-        eyebrow={`Lote ${publicLotCode(lot.id)} · ${cardSummaryLine(lot) || lot.productSource}`}
-        title={lot.title}
+        eyebrow={`Lote ${publicBatchCode(batch.id)} · ${cardSummaryLine(batch) || batch.productSource}`}
+        title={batch.title}
         description={
           editable
             ? 'Ajuste os dados enquanto o lote não entrou em disputa. Alterações são validadas pelo servidor.'
@@ -350,12 +350,12 @@ export function ManageLotPage() {
         }
         actions={
           <>
-            <Link to={`/lotes/${lot.id}`} className={buttonStyles('secondary', 'sm')}>
+            <Link to={`/lotes/${batch.id}`} className={buttonStyles('secondary', 'sm')}>
               <ExternalLink aria-hidden="true" className="size-3.5" />
               Ver na vitrine
             </Link>
             <Link
-              to={`/lotes/${lot.id}/auditoria`}
+              to={`/lotes/${batch.id}/auditoria`}
               className={buttonStyles('ghost', 'sm')}
             >
               <ShieldCheck aria-hidden="true" className="size-3.5" />
@@ -375,56 +375,56 @@ export function ManageLotPage() {
         <aside className="space-y-4">
           <div className="surface p-4">
             <CardImage
-              src={primaryCardImage(lot)}
-              alt={`Carta ${lot.title}`}
+              src={primaryCardImage(batch)}
+              alt={`Carta ${batch.title}`}
               className="aspect-[3/4] w-full"
             />
             <div className="mt-4 flex items-center justify-between gap-3">
-              <LotStatusBadge status={lot.status} />
+              <BatchStatusBadge status={batch.status} />
               <span className="numeric text-lg text-gold-bright">
-                {formatBRL(lot.currentPrice)}
+                {formatBRL(batch.currentPrice)}
               </span>
             </div>
             <dl className="mt-4 space-y-2.5 border-t border-line/70 pt-3 text-[0.75rem]">
               <div className="flex justify-between gap-3">
                 <dt className="text-mist-dim">Lance inicial</dt>
-                <dd className="numeric text-chalk">{formatBRL(lot.startingPrice)}</dd>
+                <dd className="numeric text-chalk">{formatBRL(batch.startingPrice)}</dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-mist-dim">Incremento</dt>
                 <dd className="numeric text-chalk">
-                  {formatBRL(lot.minimumIncrement)}
+                  {formatBRL(batch.minimumIncrement)}
                 </dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-mist-dim">Lances</dt>
-                <dd className="numeric text-chalk">{lot.bidCount}</dd>
+                <dd className="numeric text-chalk">{batch.bidCount}</dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-mist-dim">Início</dt>
-                <dd className="numeric text-chalk">{formatDateTime(lot.startsAt)}</dd>
+                <dd className="numeric text-chalk">{formatDateTime(batch.startsAt)}</dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-mist-dim">Encerramento</dt>
-                <dd className="numeric text-chalk">{formatDateTime(lot.endsAt)}</dd>
+                <dd className="numeric text-chalk">{formatDateTime(batch.endsAt)}</dd>
               </div>
             </dl>
           </div>
 
-          {lot.settlement && (
+          {batch.settlement && (
             <div className="surface p-4">
               <div className="flex items-center justify-between gap-2">
                 <p className="eyebrow">Liquidação</p>
-                <SettlementStatusBadge status={lot.settlement.status} />
+                <SettlementStatusBadge status={batch.settlement.status} />
               </div>
               <p className="numeric mt-2 text-lg text-chalk">
-                {formatBRL(lot.settlement.amount)}
+                {formatBRL(batch.settlement.amount)}
               </p>
               <p className="mt-1 font-mono text-[0.625rem] text-mist-dim">
-                {lot.settlement.receiptNumber}
+                {batch.settlement.receiptNumber}
               </p>
               <Link
-                to={`/recibo/${lot.settlement.publicToken}`}
+                to={`/recibo/${batch.settlement.publicToken}`}
                 className={buttonStyles('secondary', 'sm', 'mt-3 w-full')}
               >
                 Abrir recibo público

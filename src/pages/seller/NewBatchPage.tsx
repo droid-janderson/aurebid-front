@@ -15,9 +15,9 @@ import {
   Search,
   Sparkles,
 } from 'lucide-react';
-import type { CatalogCard, CreateLotInput } from '@/types/domain';
+import type { CatalogCard, CreateBatchInput } from '@/types/domain';
 import { catalogService } from '@/services/catalog.service';
-import { lotsService } from '@/services/lots.service';
+import { batchsService } from '@/services/batchs.service';
 import { queryKeys } from '@/services/query-keys';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
@@ -116,7 +116,7 @@ const schema = z
     }
   });
 
-type LotForm = z.infer<typeof schema>;
+type BatchForm = z.infer<typeof schema>;
 
 function snapshotFromCard(card: CatalogCard) {
   return {
@@ -134,7 +134,7 @@ function snapshotFromCard(card: CatalogCard) {
   };
 }
 
-export function NewLotPage() {
+export function NewBatchPage() {
   useDocumentTitle('Novo lote');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -162,7 +162,7 @@ export function NewLotPage() {
     setError,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<LotForm>({
+  } = useForm<BatchForm>({
     resolver: zodResolver(schema),
     defaultValues: {
       title: '',
@@ -225,7 +225,7 @@ export function NewLotPage() {
       return;
     }
 
-    const payload: CreateLotInput = {
+    const payload: CreateBatchInput = {
       productSource: values.productSource,
       externalProductId: values.externalProductId,
       title: values.title,
@@ -242,7 +242,7 @@ export function NewLotPage() {
     };
 
     try {
-      const lot = await lotsService.create(payload);
+      const batch = await batchsService.create(payload);
       push({
         title: values.status === 'DRAFT' ? 'Rascunho salvo' : 'Lote agendado',
         description:
@@ -252,10 +252,10 @@ export function NewLotPage() {
         tone: 'success',
       });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.lots.all }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.lots.summary }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.batchs.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.batchs.summary }),
       ]);
-      navigate(`/painel/lotes/${lot.id}`);
+      navigate(`/painel/lotes/${batch.id}`);
     } catch (error) {
       const fields = [
         'title',
@@ -499,25 +499,25 @@ export function NewLotPage() {
               </InlineAlert>
               <FieldWrapper
                 label="Origem do produto"
-                htmlFor="lot-source"
+                htmlFor="batch-source"
                 error={errors.productSource?.message}
                 hint="Ex.: CARDEX, MANUAL ou o nome do fornecedor."
                 required
               >
                 <Input
-                  id="lot-source"
+                  id="batch-source"
                   invalid={Boolean(errors.productSource)}
                   {...register('productSource')}
                 />
               </FieldWrapper>
               <FieldWrapper
                 label="Identificador externo"
-                htmlFor="lot-external-id"
+                htmlFor="batch-external-id"
                 error={errors.externalProductId?.message}
                 required
               >
                 <Input
-                  id="lot-external-id"
+                  id="batch-external-id"
                   placeholder="Código do item no catálogo"
                   invalid={Boolean(errors.externalProductId)}
                   {...register('externalProductId')}
@@ -574,12 +574,12 @@ export function NewLotPage() {
           <form onSubmit={onSubmit} noValidate className="surface mt-5 space-y-4 p-5">
             <FieldWrapper
               label="Título do lote"
-              htmlFor="lot-title"
+              htmlFor="batch-title"
               error={errors.title?.message}
               required
             >
               <Input
-                id="lot-title"
+                id="batch-title"
                 placeholder="Ex.: Charizard · Base Set"
                 invalid={Boolean(errors.title)}
                 {...register('title')}
@@ -588,12 +588,12 @@ export function NewLotPage() {
 
             <FieldWrapper
               label="Descrição"
-              htmlFor="lot-description"
+              htmlFor="batch-description"
               error={errors.description?.message}
               hint="Descreva condição, idioma e detalhes visíveis. Não declare autenticação que não existe."
             >
               <Textarea
-                id="lot-description"
+                id="batch-description"
                 placeholder="Detalhes do item, conservação e observações"
                 invalid={Boolean(errors.description)}
                 {...register('description')}
@@ -609,12 +609,12 @@ export function NewLotPage() {
 
             <FieldWrapper
               label="URL da imagem"
-              htmlFor="lot-image"
+              htmlFor="batch-image"
               error={errors.imageUrl?.message}
               hint="Opcional. Use a imagem oficial do catálogo."
             >
               <Input
-                id="lot-image"
+                id="batch-image"
                 type="url"
                 placeholder="https://..."
                 invalid={Boolean(errors.imageUrl)}
@@ -625,12 +625,12 @@ export function NewLotPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <FieldWrapper
                 label="Lance inicial (R$)"
-                htmlFor="lot-starting-price"
+                htmlFor="batch-starting-price"
                 error={errors.startingPrice?.message}
                 required
               >
                 <Input
-                  id="lot-starting-price"
+                  id="batch-starting-price"
                   inputMode="decimal"
                   placeholder="4.500,00"
                   className="numeric"
@@ -640,12 +640,12 @@ export function NewLotPage() {
               </FieldWrapper>
               <FieldWrapper
                 label="Incremento mínimo (R$)"
-                htmlFor="lot-increment"
+                htmlFor="batch-increment"
                 error={errors.minimumIncrement?.message}
                 required
               >
                 <Input
-                  id="lot-increment"
+                  id="batch-increment"
                   inputMode="decimal"
                   placeholder="250,00"
                   className="numeric"
@@ -658,13 +658,13 @@ export function NewLotPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <FieldWrapper
                 label="Início dos lances"
-                htmlFor="lot-starts"
+                htmlFor="batch-starts"
                 error={errors.startsAt?.message}
                 hint="Horário de Brasília."
                 required
               >
                 <Input
-                  id="lot-starts"
+                  id="batch-starts"
                   type="datetime-local"
                   className="numeric text-[0.8125rem]"
                   invalid={Boolean(errors.startsAt)}
@@ -673,13 +673,13 @@ export function NewLotPage() {
               </FieldWrapper>
               <FieldWrapper
                 label="Encerramento"
-                htmlFor="lot-ends"
+                htmlFor="batch-ends"
                 error={errors.endsAt?.message}
                 hint="Horário de Brasília."
                 required
               >
                 <Input
-                  id="lot-ends"
+                  id="batch-ends"
                   type="datetime-local"
                   className="numeric text-[0.8125rem]"
                   invalid={Boolean(errors.endsAt)}
@@ -690,10 +690,10 @@ export function NewLotPage() {
 
             <FieldWrapper
               label="Situação inicial"
-              htmlFor="lot-status"
+              htmlFor="batch-status"
               hint="Rascunho não aparece na vitrine. Agendado entra na fila do servidor."
             >
-              <Select id="lot-status" {...register('status')}>
+              <Select id="batch-status" {...register('status')}>
                 <option value="DRAFT">Rascunho</option>
                 <option value="SCHEDULED">Agendado</option>
               </Select>

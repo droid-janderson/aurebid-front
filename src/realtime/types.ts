@@ -1,4 +1,4 @@
-import type { LotStatus } from '@/types/domain';
+import type { BatchStatus } from '@/types/domain';
 
 export type RealtimeStatus =
   | 'idle'
@@ -8,15 +8,15 @@ export type RealtimeStatus =
   | 'error';
 
 export interface AuctionStateEvent {
-  lotId: string;
-  status: LotStatus;
+  batchId: string;
+  status: BatchStatus;
   currentPrice: number;
   bidCount: number;
   timeRemaining: number;
 }
 
 export interface NewBidEvent {
-  lotId: string;
+  batchId: string;
   bid: {
     id: string;
     amount: number;
@@ -26,21 +26,21 @@ export interface NewBidEvent {
 }
 
 export interface StatusChangeEvent {
-  lotId: string;
-  status: LotStatus;
+  batchId: string;
+  status: BatchStatus;
   startsAt: string;
   endsAt: string;
 }
 
 export interface AuctionEndedEvent {
-  lotId: string;
-  status: LotStatus;
+  batchId: string;
+  status: BatchStatus;
   winner: { id: string; name: string } | null;
   finalPrice: number | null;
 }
 
 export interface TimerEvent {
-  lotId: string;
+  batchId: string;
   timeRemaining: number;
 }
 
@@ -55,8 +55,8 @@ export interface RealtimeEventMap {
 export interface RealtimeClient {
   connect(token: string | null): void;
   disconnect(): void;
-  joinLot(lotId: string): void;
-  leaveLot(lotId: string): void;
+  joinLot(batchId: string): void;
+  leaveLot(batchId: string): void;
   on<K extends keyof RealtimeEventMap>(
     event: K,
     handler: (payload: RealtimeEventMap[K]) => void,

@@ -154,6 +154,13 @@ export async function requestWithMeta<T>(
   return send<{ data: T[]; meta: ApiMeta }>(path, options);
 }
 
+export async function requestRaw<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
+  return send<T>(path, options);
+}
+
 export function buildQuery(
   params: Record<string, string | number | boolean | undefined | null>,
 ): string {

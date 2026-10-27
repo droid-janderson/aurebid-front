@@ -13,7 +13,7 @@ import {
   RefreshCw,
   Wallet as WalletIcon,
 } from 'lucide-react';
-import type { DepositInput, WalletReservation, WalletTransaction } from '@/types/domain';
+import type { WalletReservation, WalletTransaction } from '@/types/domain';
 import { walletService } from '@/services/wallet.service';
 import { queryKeys } from '@/services/query-keys';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -21,7 +21,7 @@ import { useToast } from '@/components/ui/Toast';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Dialog';
-import { FieldWrapper, Input, Select } from '@/components/ui/Field';
+import { FieldWrapper, Input } from '@/components/ui/Field';
 import { InlineAlert } from '@/components/feedback/InlineAlert';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -30,7 +30,6 @@ import { formatBRL, parseBRLInput } from '@/utils/money';
 import { formatDateTime } from '@/utils/datetime';
 import { presentError } from '@/utils/errors';
 import { transactionTypeLabel } from '@/utils/labels';
-import { env } from '@/utils/env';
 import { cn } from '@/utils/cn';
 
 const typeIcons = {
@@ -49,12 +48,12 @@ function ReservationRow({ reservation }: { reservation: WalletReservation }) {
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-[0.8125rem] font-medium text-chalk">
-          {reservation.lot ? (
+          {reservation.batch ? (
             <Link
-              to={`/lotes/${reservation.lot.id}`}
+              to={`/lotes/${reservation.batch.id}`}
               className="transition-colors hover:text-gold"
             >
-              {reservation.lot.title}
+              {reservation.batch.title}
             </Link>
           ) : (
             'Reserva de lance'
@@ -62,8 +61,8 @@ function ReservationRow({ reservation }: { reservation: WalletReservation }) {
         </p>
         <p className="mt-0.5 flex items-center gap-1.5 text-[0.625rem] text-mist-dim">
           <Clock aria-hidden="true" className="size-3" />
-          {reservation.lot
-            ? `Encerra ${formatDateTime(reservation.lot.endsAt)}`
+          {reservation.batch
+            ? `Encerra ${formatDateTime(reservation.batch.endsAt)}`
             : 'Vinculada a um lance'}
         </p>
       </div>
@@ -122,7 +121,6 @@ export function WalletPage() {
   const [page, setPage] = useState(1);
   const [depositOpen, setDepositOpen] = useState(false);
   const [amount, setAmount] = useState('');
-  const [method, setMethod] = useState<DepositInput['method']>('PIX');
   const [depositError, setDepositError] = useState<string | null>(null);
   const [depositing, setDepositing] = useState(false);
 
@@ -156,7 +154,7 @@ export function WalletPage() {
 
     setDepositing(true);
     try {
-      const result = await walletService.deposit({ amount: parsed, method });
+      const result = await walletService.deposit({ amount: parsed, method: 'PIX' });
       push({
         title: 'Depósito registrado',
         description: `${formatBRL(result.transaction.amount)} confirmado pelo servidor.`,
@@ -211,13 +209,10 @@ export function WalletPage() {
         }
       />
 
-      {env.useMocks && (
-        <InlineAlert tone="info" className="mt-5">
-          No modo de demonstração, depósitos são simulados pelos mocks locais e
-          não movimentam dinheiro real. Em produção, a operação é executada pelo
-          backend.
-        </InlineAlert>
-      )}
+      <InlineAlert tone="info" className="mt-5">
+        Saldo de teste: este valor é simulado e não movimenta dinheiro real. A
+        operação é executada pelo backend.
+      </InlineAlert>
 
       {walletQuery.isPending ? (
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -444,18 +439,6 @@ export function WalletPage() {
               className="numeric"
               autoFocus
             />
-          </FieldWrapper>
-          <FieldWrapper label="Método" htmlFor="deposit-method" required>
-            <Select
-              id="deposit-method"
-              value={method}
-              onChange={(event) =>
-                setMethod(event.target.value as DepositInput['method'])
-              }
-            >
-              <option value="PIX">PIX</option>
-              <option value="BANK_TRANSFER">Transferência bancária</option>
-            </Select>
           </FieldWrapper>
           <p className="flex items-start gap-1.5 text-[0.625rem] leading-relaxed text-mist-dim">
             <AlertTriangle aria-hidden="true" className="mt-0.5 size-3 shrink-0 text-gold" />

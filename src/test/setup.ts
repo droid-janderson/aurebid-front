@@ -1,7 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 import { cleanup } from '@testing-library/react';
-import { resetMockDb } from '@/mocks/db';
 import { sessionStore } from '@/services/session.store';
 import { server } from '@/test/server';
 
@@ -11,9 +10,7 @@ beforeAll(() => {
 
 afterEach(() => {
   cleanup();
-  server.resetHandlers();
-  resetMockDb();
-  sessionStorage.clear();
+  server.resetHandlers();  sessionStorage.clear();
   sessionStore.clear();
 });
 

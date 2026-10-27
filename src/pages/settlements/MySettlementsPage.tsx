@@ -64,12 +64,12 @@ function SettlementItem({
     <li className="surface-soft p-3">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <Link
-          to={`/lotes/${settlement.lotId}`}
+          to={`/lotes/${settlement.batchId}`}
           className="flex min-w-0 flex-1 items-center gap-3"
         >
           <CardImage
-            src={settlement.lot?.imageUrl}
-            alt={`Carta ${settlement.lot?.title ?? 'arrematada'}`}
+            src={settlement.batch?.imageUrl}
+            alt={`Carta ${settlement.batch?.title ?? 'arrematada'}`}
             className="h-20 w-16 shrink-0 rounded-lg"
           />
           <div className="min-w-0">
@@ -89,7 +89,7 @@ function SettlementItem({
               </span>
             </p>
             <p className="mt-0.5 truncate text-sm font-medium text-chalk">
-              {settlement.lot?.title ?? 'Lote'}
+              {settlement.batch?.title ?? 'Lote'}
             </p>
             <p className="mt-1 text-[0.6875rem] text-mist-dim">
               {isBuyer

@@ -4,11 +4,11 @@ import { GuestOnly, RequireAuth } from '@/router/guards';
 import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
-import { LotPage } from '@/pages/LotPage';
+import { BatchPage } from '@/pages/BatchPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { SellerDashboardPage } from '@/pages/seller/SellerDashboardPage';
-import { NewLotPage } from '@/pages/seller/NewLotPage';
-import { ManageLotPage } from '@/pages/seller/ManageLotPage';
+import { NewBatchPage } from '@/pages/seller/NewBatchPage';
+import { ManageBatchPage } from '@/pages/seller/ManageBatchPage';
 import { SellerResultsPage } from '@/pages/seller/SellerResultsPage';
 import { WalletPage } from '@/pages/wallet/WalletPage';
 import { MySettlementsPage } from '@/pages/settlements/MySettlementsPage';
@@ -20,8 +20,8 @@ export function AppRoutes() {
     <Routes>
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
-        <Route path="lotes/:lotId" element={<LotPage />} />
-        <Route path="lotes/:lotId/auditoria" element={<PublicAuditPage />} />
+        <Route path="lotes/:batchId" element={<BatchPage />} />
+        <Route path="lotes/:batchId/auditoria" element={<PublicAuditPage />} />
         <Route path="recibo/:token" element={<ReceiptPage />} />
 
         <Route element={<GuestOnly />}>
@@ -29,15 +29,15 @@ export function AppRoutes() {
           <Route path="cadastro" element={<RegisterPage />} />
         </Route>
 
-        <Route element={<RequireAuth />}>
+        <Route element={<RequireAuth roles={['BIDDER']} />}>
           <Route path="carteira" element={<WalletPage />} />
           <Route path="arremates" element={<MySettlementsPage />} />
         </Route>
 
-        <Route element={<RequireAuth roles={['AUCTIONEER', 'ADMIN']} />}>
+        <Route element={<RequireAuth roles={['AUCTIONEER']} />}>
           <Route path="painel" element={<SellerDashboardPage />} />
-          <Route path="painel/lotes/novo" element={<NewLotPage />} />
-          <Route path="painel/lotes/:lotId" element={<ManageLotPage />} />
+          <Route path="painel/lotes/novo" element={<NewBatchPage />} />
+          <Route path="painel/lotes/:batchId" element={<ManageBatchPage />} />
           <Route path="painel/resultados" element={<SellerResultsPage />} />
         </Route>
 

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import type { LotStatus, SettlementStatus } from '@/types/domain';
-import { lotStatusLabel, settlementStatusLabel } from '@/utils/labels';
+import type { BatchStatus, SettlementStatus } from '@/types/domain';
+import { batchStatusLabel, settlementStatusLabel } from '@/utils/labels';
 import { cn } from '@/utils/cn';
 
 export type BadgeTone =
@@ -55,7 +55,7 @@ export function Badge({
   );
 }
 
-const lotTones: Record<LotStatus, BadgeTone> = {
+const batchTones: Record<BatchStatus, BadgeTone> = {
   DRAFT: 'muted',
   SCHEDULED: 'info',
   ACTIVE: 'live',
@@ -64,16 +64,16 @@ const lotTones: Record<LotStatus, BadgeTone> = {
   CANCELLED: 'loss',
 };
 
-export function LotStatusBadge({
+export function BatchStatusBadge({
   status,
   className,
 }: {
-  status: LotStatus;
+  status: BatchStatus;
   className?: string;
 }) {
   return (
-    <Badge tone={lotTones[status]} dot={status === 'ACTIVE'} className={className}>
-      {lotStatusLabel[status]}
+    <Badge tone={batchTones[status]} dot={status === 'ACTIVE'} className={className}>
+      {batchStatusLabel[status]}
     </Badge>
   );
 }

@@ -1,6 +1,6 @@
 export type UserRole = 'ADMIN' | 'AUCTIONEER' | 'BIDDER';
 
-export type LotStatus =
+export type BatchStatus =
   | 'DRAFT'
   | 'SCHEDULED'
   | 'ACTIVE'
@@ -45,13 +45,13 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
-export interface LotSeller {
+export interface BatchSeller {
   id: string;
   name: string;
   email?: string;
 }
 
-export interface LotTiming {
+export interface BatchTiming {
   status: 'scheduled' | 'active' | 'ended';
   timeRemaining: number;
   timeUntilStart: number;
@@ -72,14 +72,14 @@ export interface BidderSummary {
 
 export interface Bid {
   id: string;
-  lotId: string;
+  batchId: string;
   bidderId: string;
   amount: number;
   createdAt: string;
   bidder: BidderSummary;
   audit?: BidAuditStamp | null;
-  lot?: Pick<
-    Lot,
+  batch?: Pick<
+    Batch,
     | 'id'
     | 'title'
     | 'status'
@@ -92,7 +92,7 @@ export interface Bid {
   >;
 }
 
-export interface LotSettlementSummary {
+export interface BatchSettlementSummary {
   id: string;
   status: SettlementStatus;
   amount: number;
@@ -101,7 +101,7 @@ export interface LotSettlementSummary {
   completedAt: string | null;
 }
 
-export interface Lot {
+export interface Batch {
   id: string;
   sellerId: string;
   productSource: string;
@@ -114,15 +114,15 @@ export interface Lot {
   minimumIncrement: number;
   startsAt: string;
   endsAt: string;
-  status: LotStatus;
+  status: BatchStatus;
   createdAt: string;
   updatedAt: string;
-  seller: LotSeller;
+  seller: BatchSeller;
   bids?: Bid[];
   currentPrice: number;
   bidCount: number;
-  timing: LotTiming;
-  settlement?: LotSettlementSummary | null;
+  timing: BatchTiming;
+  settlement?: BatchSettlementSummary | null;
   _count?: {
     bids?: number;
     auditEntries?: number;
@@ -130,10 +130,10 @@ export interface Lot {
   };
 }
 
-export interface LotListFilters {
+export interface BatchListFilters {
   page?: number;
   limit?: number;
-  status?: LotStatus;
+  status?: BatchStatus;
   search?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -141,7 +141,7 @@ export interface LotListFilters {
   sortOrder?: 'asc' | 'desc';
 }
 
-export interface CreateLotInput {
+export interface CreateBatchInput {
   productSource: string;
   externalProductId: string;
   title: string;
@@ -155,21 +155,21 @@ export interface CreateLotInput {
   status?: 'DRAFT' | 'SCHEDULED';
 }
 
-export type UpdateLotInput = Partial<CreateLotInput>;
+export type UpdateBatchInput = Partial<CreateBatchInput>;
 
 export interface WalletReservation {
   id: string;
   walletId: string;
-  lotId: string;
+  batchId: string;
   bidId: string | null;
   amount: number;
   status: ReservationStatus;
   createdAt: string;
   updatedAt: string;
-  lot?: {
+  batch?: {
     id: string;
     title: string;
-    status: LotStatus;
+    status: BatchStatus;
     endsAt: string;
   };
 }
@@ -219,7 +219,7 @@ export interface DepositInput {
 
 export interface Settlement {
   id: string;
-  lotId: string;
+  batchId: string;
   winningBidId: string;
   buyerId: string;
   sellerId: string;
@@ -230,10 +230,10 @@ export interface Settlement {
   completedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  lot: {
+  batch: {
     id: string;
     title: string;
-    status: LotStatus;
+    status: BatchStatus;
     imageUrl: string | null;
     endsAt: string;
   };
@@ -249,7 +249,7 @@ export interface Settlement {
 export interface AuditEntry {
   id: string;
   bidId: string;
-  lotId: string;
+  batchId: string;
   sequence: number;
   previousHash: string | null;
   currentHash: string;
@@ -260,10 +260,10 @@ export interface AuditEntry {
     createdAt: string;
     bidder: BidderSummary;
   } | null;
-  lot: {
+  batch: {
     id: string;
     title: string;
-    status: LotStatus;
+    status: BatchStatus;
   } | null;
 }
 

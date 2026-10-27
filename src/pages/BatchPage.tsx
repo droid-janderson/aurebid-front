@@ -11,16 +11,16 @@ import {
   ShieldCheck,
   User,
 } from 'lucide-react';
-import { lotsService } from '@/services/lots.service';
+import { batchsService } from '@/services/batchs.service';
 import { queryKeys } from '@/services/query-keys';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLotRoom } from '@/realtime/useLotRoom';
+import { useBatchRoom } from '@/realtime/useBatchRoom';
 import { CardImage } from '@/components/cards/CardImage';
-import { LotStatusBadge } from '@/components/ui/Badge';
-import { Countdown } from '@/components/lots/Countdown';
-import { BidPanel } from '@/components/lots/BidPanel';
-import { BidHistory } from '@/components/lots/BidHistory';
+import { BatchStatusBadge } from '@/components/ui/Badge';
+import { Countdown } from '@/components/batchs/Countdown';
+import { BidPanel } from '@/components/batchs/BidPanel';
+import { BidHistory } from '@/components/batchs/BidHistory';
 import { SectionHeader } from '@/components/layout/PageHeader';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { InlineAlert } from '@/components/feedback/InlineAlert';
@@ -30,7 +30,7 @@ import { cardAttributes, primaryCardImage } from '@/utils/product';
 import { formatBRL } from '@/utils/money';
 import { formatDateTime } from '@/utils/datetime';
 import { presentError } from '@/utils/errors';
-import { publicLotCode } from '@/utils/pseudonym';
+import { publicBatchCode } from '@/utils/pseudonym';
 import { cn } from '@/utils/cn';
 
 const connectionLabel: Record<string, string> = {
@@ -41,19 +41,19 @@ const connectionLabel: Record<string, string> = {
   error: 'Sem sinal ao vivo',
 };
 
-export function LotPage() {
-  const { lotId } = useParams<{ lotId: string }>();
+export function BatchPage() {
+  const { batchId } = useParams<{ batchId: string }>();
   const { user } = useAuth();
-  const lotQuery = useQuery({
-    queryKey: queryKeys.lots.detail(lotId ?? ''),
-    queryFn: () => lotsService.get(lotId!),
-    enabled: Boolean(lotId),
+  const batchQuery = useQuery({
+    queryKey: queryKeys.batchs.detail(batchId ?? ''),
+    queryFn: () => batchsService.get(batchId!),
+    enabled: Boolean(batchId),
   });
 
-  const realtimeStatus = useLotRoom(lotId, Boolean(lotId));
-  useDocumentTitle(lotQuery.data?.title ?? 'Lote');
+  const realtimeStatus = useBatchRoom(batchId, Boolean(batchId));
+  useDocumentTitle(batchQuery.data?.title ?? 'Lote');
 
-  if (!lotId) {
+  if (!batchId) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20">
         <ErrorState
@@ -69,7 +69,7 @@ export function LotPage() {
     );
   }
 
-  if (lotQuery.isPending) {
+  if (batchQuery.isPending) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <Skeleton className="h-4 w-32" />
@@ -89,14 +89,14 @@ export function LotPage() {
     );
   }
 
-  if (lotQuery.isError || !lotQuery.data) {
-    const error = presentError(lotQuery.error);
+  if (batchQuery.isError || !batchQuery.data) {
+    const error = presentError(batchQuery.error);
     return (
       <div className="mx-auto max-w-3xl px-4 py-20">
         <ErrorState
           title={error.title}
           message={error.message}
-          onRetry={() => void lotQuery.refetch()}
+          onRetry={() => void batchQuery.refetch()}
           action={
             <Link to="/" className={buttonStyles('secondary', 'sm')}>
               Ver vitrine
@@ -107,13 +107,13 @@ export function LotPage() {
     );
   }
 
-  const lot = lotQuery.data;
-  const attributes = cardAttributes(lot);
-  const raw = lot.productData ?? {};
+  const batch = batchQuery.data;
+  const attributes = cardAttributes(batch);
+  const raw = batch.productData ?? {};
   const condition =
     typeof raw.condition === 'string' ? raw.condition : undefined;
   const language = typeof raw.language === 'string' ? raw.language : undefined;
-  const isSeller = user?.id === lot.sellerId;
+  const isSeller = user?.id === batch.sellerId;
   const connection = connectionLabel[realtimeStatus] ?? realtimeStatus;
   const live = realtimeStatus === 'connected';
 
@@ -127,7 +127,7 @@ export function LotPage() {
       : null,
     condition ? { label: 'Condição', value: condition } : null,
     language ? { label: 'Idioma', value: language } : null,
-    { label: 'Origem', value: lot.productSource },
+    { label: 'Origem', value: batch.productSource },
   ].filter((item): item is { label: string; value: string } => Boolean(item));
 
   return (
@@ -155,7 +155,7 @@ export function LotPage() {
             {connection}
           </span>
           <Link
-            to={`/lotes/${lot.id}/auditoria`}
+            to={`/lotes/${batch.id}/auditoria`}
             className="inline-flex items-center gap-1.5 text-[0.6875rem] font-medium text-mist transition-colors hover:text-gold"
           >
             <ShieldCheck aria-hidden="true" className="size-3.5" />
@@ -169,8 +169,8 @@ export function LotPage() {
           <div className="grid gap-8 sm:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
             <div className="art-glow">
               <CardImage
-                src={primaryCardImage(lot)}
-                alt={`Carta ${lot.title}`}
+                src={primaryCardImage(batch)}
+                alt={`Carta ${batch.title}`}
                 className="aspect-[3/4] w-full border-gold/20"
                 priority
               />
@@ -178,45 +178,45 @@ export function LotPage() {
 
             <div className="flex min-w-0 flex-col">
               <div className="flex flex-wrap items-center gap-2">
-                <LotStatusBadge status={lot.status} />
+                <BatchStatusBadge status={batch.status} />
                 <span className="font-mono text-[0.625rem] tracking-[0.14em] text-mist-dim uppercase">
-                  Lote {publicLotCode(lot.id)}
+                  Lote {publicBatchCode(batch.id)}
                 </span>
               </div>
               <h1 className="display mt-3 text-[clamp(2rem,4.5vw,3.2rem)] text-chalk">
-                {lot.title}
+                {batch.title}
               </h1>
               <p className="mt-2 flex items-center gap-1.5 text-xs text-mist-dim">
                 <User aria-hidden="true" className="size-3.5" />
-                Leiloado por <span className="text-mist">{lot.seller.name}</span>
+                Leiloado por <span className="text-mist">{batch.seller.name}</span>
               </p>
 
               <div className="mt-6 flex items-end justify-between gap-4 border-y border-line/70 py-4">
                 <div>
                   <p className="text-[0.625rem] tracking-[0.1em] text-mist-dim uppercase">
-                    {lot.bidCount > 0 ? 'Maior lance' : 'Lance inicial'}
+                    {batch.bidCount > 0 ? 'Maior lance' : 'Lance inicial'}
                   </p>
                   <p className="numeric mt-0.5 text-2xl font-medium text-gold-bright">
-                    {formatBRL(lot.currentPrice)}
+                    {formatBRL(batch.currentPrice)}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-[0.625rem] tracking-[0.1em] text-mist-dim uppercase">
-                    {lot.status === 'ACTIVE' ? 'Encerra em' : 'Encerrado em'}
+                    {batch.status === 'ACTIVE' ? 'Encerra em' : 'Encerrado em'}
                   </p>
-                  {lot.status === 'ACTIVE' ? (
-                    <Countdown target={lot.endsAt} className="mt-1" />
+                  {batch.status === 'ACTIVE' ? (
+                    <Countdown target={batch.endsAt} className="mt-1" />
                   ) : (
                     <p className="numeric mt-1 text-xs text-mist">
-                      {formatDateTime(lot.endsAt)}
+                      {formatDateTime(batch.endsAt)}
                     </p>
                   )}
                 </div>
               </div>
 
-              {lot.description && (
+              {batch.description && (
                 <p className="mt-5 text-sm leading-relaxed text-mist">
-                  {lot.description}
+                  {batch.description}
                 </p>
               )}
 
@@ -236,10 +236,10 @@ export function LotPage() {
               <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-line/70 pt-4 text-[0.6875rem] text-mist-dim">
                 <span className="inline-flex items-center gap-1.5">
                   <CalendarClock aria-hidden="true" className="size-3.5" />
-                  Início {formatDateTime(lot.startsAt)}
+                  Início {formatDateTime(batch.startsAt)}
                 </span>
                 <Link
-                  to={`/lotes/${lot.id}/auditoria`}
+                  to={`/lotes/${batch.id}/auditoria`}
                   className="inline-flex items-center gap-1 font-medium text-gold transition-colors hover:text-gold-bright"
                 >
                   Ver trilha de lances
@@ -253,7 +253,7 @@ export function LotPage() {
                     Acompanhe a disputa ou ajuste o lote no painel do leiloeiro.
                     <div className="mt-2">
                       <Link
-                        to={`/painel/lotes/${lot.id}`}
+                        to={`/painel/lotes/${batch.id}`}
                         className="inline-flex items-center gap-1.5 text-xs font-medium text-gold hover:text-gold-bright"
                       >
                         <LayoutDashboard aria-hidden="true" className="size-3.5" />
@@ -274,7 +274,7 @@ export function LotPage() {
               description="Os valores abaixo vêm do servidor. O hash e a sequência permitem conferir a integridade da trilha."
               action={
                 <Link
-                  to={`/lotes/${lot.id}/auditoria`}
+                  to={`/lotes/${batch.id}/auditoria`}
                   className={buttonStyles('secondary', 'sm')}
                 >
                   <ShieldCheck aria-hidden="true" className="size-3.5" />
@@ -283,13 +283,13 @@ export function LotPage() {
               }
             />
             <div id="historico-title" className="mt-5">
-              <BidHistory lotId={lot.id} />
+              <BidHistory batchId={batch.id} />
             </div>
           </section>
         </div>
 
         <aside className="lg:sticky lg:top-[calc(var(--header-height)+1.5rem)] lg:self-start">
-          <BidPanel lot={lot} />
+          <BidPanel batch={batch} />
 
           <div className="surface-soft mt-4 p-4">
             <p className="flex items-center gap-1.5 text-[0.6875rem] font-medium text-mist">
@@ -297,10 +297,10 @@ export function LotPage() {
               Regras deste lote
             </p>
             <ul className="mt-2 space-y-1.5 text-[0.6875rem] leading-relaxed text-mist-dim">
-              <li>Lance inicial de {formatBRL(lot.startingPrice)}.</li>
+              <li>Lance inicial de {formatBRL(batch.startingPrice)}.</li>
               <li>
                 Cada novo lance precisa superar o atual em ao menos{' '}
-                {formatBRL(lot.minimumIncrement)}.
+                {formatBRL(batch.minimumIncrement)}.
               </li>
               <li>
                 Lances exigem saldo disponível e ficam reservados até o

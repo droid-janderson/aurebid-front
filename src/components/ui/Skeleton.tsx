@@ -4,7 +4,7 @@ export function Skeleton({ className }: { className?: string }) {
   return <div className={cn('skeleton', className)} aria-hidden="true" />;
 }
 
-export function LotCardSkeleton() {
+export function BatchCardSkeleton() {
   return (
     <div className="surface overflow-hidden p-3">
       <Skeleton className="aspect-[3/4] w-full rounded-xl" />
@@ -21,11 +21,11 @@ export function LotCardSkeleton() {
   );
 }
 
-export function LotGridSkeleton({ count = 8 }: { count?: number }) {
+export function BatchGridSkeleton({ count = 8 }: { count?: number }) {
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {Array.from({ length: count }).map((_, index) => (
-        <LotCardSkeleton key={index} />
+        <BatchCardSkeleton key={index} />
       ))}
     </div>
   );

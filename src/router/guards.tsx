@@ -35,8 +35,8 @@ export function RequireAuth({ roles }: { roles?: UserRole[] }) {
           Esta área não é da sua conta
         </h1>
         <p className="mt-3 max-w-md text-sm leading-relaxed text-mist">
-          O painel do leiloeiro é exclusivo para contas de leiloeiro. A
-          autorização definitiva é feita pelo servidor.
+          Esta área é exclusiva para o perfil autorizado. A autorização
+          definitiva é feita pelo servidor.
         </p>
         <Link
           to="/"

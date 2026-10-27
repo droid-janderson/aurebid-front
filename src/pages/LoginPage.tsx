@@ -13,7 +13,6 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useToast } from "@/components/ui/Toast";
 import { presentError, type ErrorPresentation } from "@/utils/errors";
 import { safeRedirect } from "@/utils/redirect";
-import { env } from "@/utils/env";
 
 const schema = z.object({
   email: z
@@ -37,6 +36,13 @@ export function LoginPage() {
   const params = new URLSearchParams(location.search);
   const from = safeRedirect(params.get("from"));
 
+  const fillDemo = (email: string, password: string) => {
+    setValue('email', email, { shouldValidate: true });
+    setValue('password', password, { shouldValidate: true });
+  };
+
+  const showDemoAccounts =
+    import.meta.env.DEV || import.meta.env.VITE_SHOW_DEMO_ACCOUNTS === 'true';
   const {
     register,
     handleSubmit,
@@ -62,10 +68,6 @@ export function LoginPage() {
     }
   });
 
-  const fillDemo = (email: string, password: string) => {
-    setValue("email", email, { shouldValidate: true });
-    setValue("password", password, { shouldValidate: true });
-  };
 
   return (
     <AuthShell
@@ -166,17 +168,15 @@ export function LoginPage() {
         </Button>
       </form>
 
-      {env.useMocks && (
+      {showDemoAccounts && (
         <div className="mt-7 rounded-xl border border-dashed border-line-strong/70 p-3.5">
           <p className="font-mono text-[0.5625rem] tracking-[0.14em] text-mist-dim uppercase">
-            Contas de demonstração
+            Contas de teste (seed do backend)
           </p>
           <div className="mt-2 flex flex-col gap-1.5">
             <button
               type="button"
-              onClick={() =>
-                fillDemo("auctioneer@aurebid.com", "auctioneer123")
-              }
+              onClick={() => fillDemo('auctioneer@aurebid.com', 'auctioneer123')}
               className="flex items-center justify-between rounded-md px-1 py-0.5 text-left text-xs text-mist transition-colors hover:text-chalk"
             >
               <span>Leiloeiro</span>
@@ -186,7 +186,7 @@ export function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => fillDemo("bidder@aurebid.com", "bidder123")}
+              onClick={() => fillDemo('bidder@aurebid.com', 'bidder123')}
               className="flex items-center justify-between rounded-md px-1 py-0.5 text-left text-xs text-mist transition-colors hover:text-chalk"
             >
               <span>Licitante</span>
@@ -196,7 +196,7 @@ export function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => fillDemo("bidder2@aurebid.com", "bidder123")}
+              onClick={() => fillDemo('bidder2@aurebid.com', 'bidder123')}
               className="flex items-center justify-between rounded-md px-1 py-0.5 text-left text-xs text-mist transition-colors hover:text-chalk"
             >
               <span>Licitante 2</span>
@@ -207,6 +207,7 @@ export function LoginPage() {
           </div>
         </div>
       )}
+
     </AuthShell>
   );
 }

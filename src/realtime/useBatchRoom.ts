@@ -6,18 +6,18 @@ import { queryKeys } from '@/services/query-keys';
 import { sessionStore } from '@/services/session.store';
 
 /**
- * Subscribes to a lot room and reconciles server state through the query
+ * Subscribes to a batch room and reconciles server state through the query
  * cache. Events never mutate financial values locally; they invalidate the
  * authoritative queries.
  */
-export function useLotRoom(lotId: string | undefined, enabled: boolean) {
+export function useBatchRoom(batchId: string | undefined, enabled: boolean) {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<RealtimeStatus>(
     enabled ? 'connecting' : 'idle',
   );
 
   useEffect(() => {
-    if (!lotId || !enabled) {
+    if (!batchId || !enabled) {
       return;
     }
 
@@ -29,19 +29,19 @@ export function useLotRoom(lotId: string | undefined, enabled: boolean) {
       if (cancelled) return;
 
       client.connect(sessionStore.getAccessToken());
-      client.joinLot(lotId!);
+      client.joinLot(batchId!);
 
       const refreshLot = () => {
         void queryClient.invalidateQueries({
-          queryKey: queryKeys.lots.detail(lotId!),
+          queryKey: queryKeys.batchs.detail(batchId!),
         });
         void queryClient.invalidateQueries({
-          queryKey: queryKeys.bids.lot(lotId!),
+          queryKey: queryKeys.bids.batch(batchId!),
         });
       };
 
       const offBid = client.on('bid:new', (payload) => {
-        if (payload.lotId === lotId) {
+        if (payload.batchId === batchId) {
           refreshLot();
           void queryClient.invalidateQueries({
             queryKey: queryKeys.wallet.detail,
@@ -53,11 +53,11 @@ export function useLotRoom(lotId: string | undefined, enabled: boolean) {
       });
 
       const offStatus = client.on('auction:status_change', (payload) => {
-        if (payload.lotId === lotId) refreshLot();
+        if (payload.batchId === batchId) refreshLot();
       });
 
       const offEnded = client.on('auction:ended', (payload) => {
-        if (payload.lotId === lotId) {
+        if (payload.batchId === batchId) {
           refreshLot();
           void queryClient.invalidateQueries({
             queryKey: queryKeys.settlements.mine,
@@ -69,7 +69,7 @@ export function useLotRoom(lotId: string | undefined, enabled: boolean) {
       });
 
       const offState = client.on('auction:state', (payload) => {
-        if (payload.lotId === lotId) {
+        if (payload.batchId === batchId) {
           setStatus('connected');
         }
       });
@@ -84,7 +84,7 @@ export function useLotRoom(lotId: string | undefined, enabled: boolean) {
         offEnded();
         offState();
         offConnection();
-        client.leaveLot(lotId!);
+        client.leaveLot(batchId!);
       };
     }
 
@@ -94,7 +94,7 @@ export function useLotRoom(lotId: string | undefined, enabled: boolean) {
       cancelled = true;
       cleanup?.();
     };
-  }, [lotId, enabled, queryClient]);
+  }, [batchId, enabled, queryClient]);
 
-  return enabled && lotId ? status : 'idle';
+  return enabled && batchId ? status : 'idle';
 }
