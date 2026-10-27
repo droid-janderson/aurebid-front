@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_SOCKET_URL?: string;
   readonly VITE_USE_MOCKS?: string;
   readonly VITE_MOCK_LATENCY_MS?: string;
+  readonly VITE_SHOW_DEMO_ACCOUNTS?: string;
 }
 
 interface ImportMeta {

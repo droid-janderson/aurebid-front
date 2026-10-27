@@ -9,7 +9,7 @@ export function pseudonymFor(id: string, prefix = 'Licitante'): string {
   return `${prefix} ${code.slice(0, 2)}·${code.slice(2)}`;
 }
 
-export function publicLotCode(id: string): string {
+export function publicBatchCode(id: string): string {
   return `#${id.slice(-6).toUpperCase()}`;
 }
 

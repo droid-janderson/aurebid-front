@@ -1,4 +1,4 @@
-import type { Lot, PokemonCardSnapshot } from '@/types/domain';
+import type { Batch, PokemonCardSnapshot } from '@/types/domain';
 
 export interface CardAttributes {
   setName?: string;
@@ -24,8 +24,8 @@ function stringList(value: unknown): string[] {
 }
 
 /** Extracts display metadata from the flexible productData snapshot. */
-export function cardSnapshot(lot: Pick<Lot, 'productData'>): PokemonCardSnapshot | null {
-  const raw = lot.productData;
+export function cardSnapshot(batch: Pick<Batch, 'productData'>): PokemonCardSnapshot | null {
+  const raw = batch.productData;
   if (!raw || typeof raw !== 'object') return null;
 
   const nested =
@@ -61,8 +61,8 @@ export function cardSnapshot(lot: Pick<Lot, 'productData'>): PokemonCardSnapshot
   };
 }
 
-export function cardAttributes(lot: Pick<Lot, 'productData' | 'productSource'>): CardAttributes {
-  const snapshot = cardSnapshot(lot);
+export function cardAttributes(batch: Pick<Batch, 'productData' | 'productSource'>): CardAttributes {
+  const snapshot = cardSnapshot(batch);
   const attributes: CardAttributes = {
     setName: snapshot?.setName,
     setCode: snapshot?.setId,
@@ -77,7 +77,7 @@ export function cardAttributes(lot: Pick<Lot, 'productData' | 'productSource'>):
   };
 
   if (!snapshot) {
-    const raw = lot.productData ?? {};
+    const raw = batch.productData ?? {};
     attributes.setName = stringValue(raw.setName);
     attributes.number = stringValue(raw.number);
     attributes.rarity = stringValue(raw.rarity);
@@ -88,14 +88,14 @@ export function cardAttributes(lot: Pick<Lot, 'productData' | 'productSource'>):
 }
 
 export function primaryCardImage(
-  lot: Pick<Lot, 'imageUrl' | 'productData'>,
+  batch: Pick<Batch, 'imageUrl' | 'productData'>,
 ): string | null {
-  const snapshot = cardSnapshot(lot);
-  return lot.imageUrl ?? snapshot?.imageLarge ?? snapshot?.imageSmall ?? null;
+  const snapshot = cardSnapshot(batch);
+  return batch.imageUrl ?? snapshot?.imageLarge ?? snapshot?.imageSmall ?? null;
 }
 
-export function cardSummaryLine(lot: Pick<Lot, 'productData' | 'productSource'>): string {
-  const attributes = cardAttributes(lot);
+export function cardSummaryLine(batch: Pick<Batch, 'productData' | 'productSource'>): string {
+  const attributes = cardAttributes(batch);
   return [
     attributes.setName,
     attributes.number ? `#${attributes.number}` : undefined,

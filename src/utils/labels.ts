@@ -1,12 +1,12 @@
 import type {
-  LotStatus,
+  BatchStatus,
   ReservationStatus,
   SettlementStatus,
   UserRole,
   WalletTransactionType,
 } from '@/types/domain';
 
-export const lotStatusLabel: Record<LotStatus, string> = {
+export const batchStatusLabel: Record<BatchStatus, string> = {
   DRAFT: 'Rascunho',
   SCHEDULED: 'Agendado',
   ACTIVE: 'Ao vivo',
@@ -43,7 +43,7 @@ export const roleLabel: Record<UserRole, string> = {
 };
 
 export function canBid(role: UserRole | undefined): boolean {
-  return role === 'BIDDER' || role === 'AUCTIONEER' || role === 'ADMIN';
+  return role === 'BIDDER';
 }
 
 export function isAuctioneer(role: UserRole | undefined): boolean {

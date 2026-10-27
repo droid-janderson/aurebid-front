@@ -9,7 +9,7 @@ import {
 
 describe('sala do lote', () => {
   it('exibe o resultado e o recibo de um lote encerrado', async () => {
-    renderWithProviders(<AppRoutes />, '/lotes/lot-005');
+    renderWithProviders(<AppRoutes />, '/lotes/batch-005');
 
     expect(
       await screen.findByRole('heading', { name: 'Blastoise · Base Set' }),
@@ -23,7 +23,7 @@ describe('sala do lote', () => {
 
   it('avisa que um lote agendado ainda não recebe lances', async () => {
     authenticateAs('user-bidder');
-    renderWithProviders(<AppRoutes />, '/lotes/lot-003');
+    renderWithProviders(<AppRoutes />, '/lotes/batch-003');
 
     expect(
       await screen.findByText('Lances abrem em breve'),
@@ -33,7 +33,7 @@ describe('sala do lote', () => {
 
   it('impede novo lance de quem já lidera o lote', async () => {
     authenticateAs('user-bidder-2');
-    renderWithProviders(<AppRoutes />, '/lotes/lot-001');
+    renderWithProviders(<AppRoutes />, '/lotes/batch-001');
 
     expect(
       await screen.findByText('Você está liderando'),
@@ -46,7 +46,7 @@ describe('sala do lote', () => {
   it('exibe o erro do servidor quando o saldo é insuficiente', async () => {
     const user = userEvent.setup();
     authenticateAs('user-bidder');
-    renderWithProviders(<AppRoutes />, '/lotes/lot-001');
+    renderWithProviders(<AppRoutes />, '/lotes/batch-001');
 
     const input = await screen.findByLabelText('Seu lance');
     await user.clear(input);

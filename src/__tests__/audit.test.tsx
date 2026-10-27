@@ -10,7 +10,7 @@ const verifyUrl = `${env.apiUrl}/auctions/:id/audit/verify`;
 
 describe('auditoria pública', () => {
   it('declara a cadeia verificada quando o servidor confirma a integridade', async () => {
-    renderWithProviders(<AppRoutes />, '/lotes/lot-001/auditoria');
+    renderWithProviders(<AppRoutes />, '/lotes/batch-001/auditoria');
 
     expect(
       await screen.findByText('Cadeia verificada pelo servidor'),
@@ -38,7 +38,7 @@ describe('auditoria pública', () => {
       ),
     );
 
-    renderWithProviders(<AppRoutes />, '/lotes/lot-001/auditoria');
+    renderWithProviders(<AppRoutes />, '/lotes/batch-001/auditoria');
 
     expect(
       await screen.findByText('Falha de integridade detectada'),
@@ -63,7 +63,7 @@ describe('auditoria pública', () => {
       ),
     );
 
-    renderWithProviders(<AppRoutes />, '/lotes/lot-001/auditoria');
+    renderWithProviders(<AppRoutes />, '/lotes/batch-001/auditoria');
 
     expect(
       await screen.findByText('Verificação pública indisponível'),

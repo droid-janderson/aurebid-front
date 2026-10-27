@@ -12,11 +12,15 @@ const compactFormatter = new Intl.NumberFormat('pt-BR', {
   maximumFractionDigits: 1,
 });
 
-export function formatBRL(value: number | null | undefined): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
+export function formatBRL(value: number | string | null | undefined): string {
+  if (value === null || value === undefined) {
     return '—';
   }
-  return brlFormatter.format(value);
+  const numeric = Number(value);
+  if (Number.isNaN(numeric)) {
+    return '—';
+  }
+  return brlFormatter.format(numeric);
 }
 
 export function formatBRLCompact(value: number): string {
@@ -37,14 +41,14 @@ export function fromCents(cents: number): number {
  * first bid equals starting price, later bids add the minimum increment.
  * Display only — the backend is authoritative.
  */
-export function minimumNextBid(lot: {
+export function minimumNextBid(batch: {
   startingPrice: number;
   minimumIncrement: number;
   currentPrice: number;
   bidCount: number;
 }): number {
-  if (lot.bidCount === 0) return lot.startingPrice;
-  return fromCents(toCents(lot.currentPrice) + toCents(lot.minimumIncrement));
+  if (batch.bidCount === 0) return batch.startingPrice;
+  return fromCents(toCents(batch.currentPrice) + toCents(batch.minimumIncrement));
 }
 
 /** Accepts "1.234,56", "1234.56" or "1234,56". */
@@ -62,6 +66,6 @@ export function parseBRLInput(raw: string): number | null {
   return Math.round(value * 100) / 100;
 }
 
-export function formatAmountInput(value: number): string {
-  return value.toFixed(2).replace('.', ',');
+export function formatAmountInput(value: number | string): string {
+  return Number(value).toFixed(2).replace('.', ',');
 }
