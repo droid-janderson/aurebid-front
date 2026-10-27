@@ -1,29 +1,32 @@
-import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowRight, Eye, EyeOff, Mail, LockKeyhole } from 'lucide-react';
-import { AuthShell } from '@/components/auth/AuthShell';
-import { FieldWrapper, Input } from '@/components/ui/Field';
-import { Button } from '@/components/ui/Button';
-import { InlineAlert } from '@/components/feedback/InlineAlert';
-import { useAuth } from '@/contexts/AuthContext';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { useToast } from '@/components/ui/Toast';
-import { presentError, type ErrorPresentation } from '@/utils/errors';
-import { safeRedirect } from '@/utils/redirect';
-import { env } from '@/utils/env';
+import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowRight, Eye, EyeOff, Mail, LockKeyhole } from "lucide-react";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { FieldWrapper, Input } from "@/components/ui/Field";
+import { Button } from "@/components/ui/Button";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
+import { useAuth } from "@/contexts/AuthContext";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useToast } from "@/components/ui/Toast";
+import { presentError, type ErrorPresentation } from "@/utils/errors";
+import { safeRedirect } from "@/utils/redirect";
+import { env } from "@/utils/env";
 
 const schema = z.object({
-  email: z.string().min(1, 'Informe seu e-mail.').email('Informe um e-mail válido.'),
-  password: z.string().min(1, 'Informe sua senha.'),
+  email: z
+    .string()
+    .min(1, "Informe seu e-mail.")
+    .email("Informe um e-mail válido."),
+  password: z.string().min(1, "Informe sua senha."),
 });
 
 type LoginForm = z.infer<typeof schema>;
 
 export function LoginPage() {
-  useDocumentTitle('Entrar');
+  useDocumentTitle("Entrar");
   const { login } = useAuth();
   const { push } = useToast();
   const navigate = useNavigate();
@@ -32,7 +35,7 @@ export function LoginPage() {
   const [formError, setFormError] = useState<ErrorPresentation | null>(null);
 
   const params = new URLSearchParams(location.search);
-  const from = safeRedirect(params.get('from'));
+  const from = safeRedirect(params.get("from"));
 
   const {
     register,
@@ -41,7 +44,7 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({
     resolver: zodResolver(schema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: "", password: "" },
   });
 
   const onSubmit = handleSubmit(async (values) => {
@@ -49,9 +52,9 @@ export function LoginPage() {
     try {
       const user = await login(values);
       push({
-        title: `Bem-vindo de volta, ${user.name.split(' ')[0]}`,
-        description: 'Sua sessão está ativa.',
-        tone: 'success',
+        title: `Bem-vindo de volta, ${user.name.split(" ")[0]}`,
+        description: "Sua sessão está ativa.",
+        tone: "success",
       });
       navigate(from, { replace: true });
     } catch (error) {
@@ -60,8 +63,8 @@ export function LoginPage() {
   });
 
   const fillDemo = (email: string, password: string) => {
-    setValue('email', email, { shouldValidate: true });
-    setValue('password', password, { shouldValidate: true });
+    setValue("email", email, { shouldValidate: true });
+    setValue("password", password, { shouldValidate: true });
   };
 
   return (
@@ -70,9 +73,9 @@ export function LoginPage() {
       description="Acesse sua carteira, acompanhe arremates e dispute lotes ao vivo."
       footer={
         <>
-          Ainda não tem conta?{' '}
+          Ainda não tem conta?{" "}
           <Link
-            to={`/cadastro${from !== '/' ? `?from=${encodeURIComponent(from)}` : ''}`}
+            to={`/cadastro${from !== "/" ? `?from=${encodeURIComponent(from)}` : ""}`}
             className="font-medium text-gold transition-colors hover:text-gold-bright"
           >
             Criar conta
@@ -81,13 +84,22 @@ export function LoginPage() {
       }
     >
       {formError && (
-        <InlineAlert tone={formError.tone} title={formError.title} className="mb-5">
+        <InlineAlert
+          tone={formError.tone}
+          title={formError.title}
+          className="mb-5"
+        >
           {formError.message}
         </InlineAlert>
       )}
 
       <form onSubmit={onSubmit} noValidate className="space-y-4">
-        <FieldWrapper label="E-mail" htmlFor="login-email" error={errors.email?.message} required>
+        <FieldWrapper
+          label="E-mail"
+          htmlFor="login-email"
+          error={errors.email?.message}
+          required
+        >
           <div className="relative">
             <Mail
               aria-hidden="true"
@@ -100,8 +112,8 @@ export function LoginPage() {
               placeholder="voce@exemplo.com"
               className="pl-9"
               invalid={Boolean(errors.email)}
-              aria-describedby={errors.email ? 'login-email-error' : undefined}
-              {...register('email')}
+              aria-describedby={errors.email ? "login-email-error" : undefined}
+              {...register("email")}
             />
           </div>
         </FieldWrapper>
@@ -119,19 +131,21 @@ export function LoginPage() {
             />
             <Input
               id="login-password"
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               placeholder="Sua senha"
               className="pr-10 pl-9"
               invalid={Boolean(errors.password)}
-              aria-describedby={errors.password ? 'login-password-error' : undefined}
-              {...register('password')}
+              aria-describedby={
+                errors.password ? "login-password-error" : undefined
+              }
+              {...register("password")}
             />
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
               className="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-1.5 text-mist-dim transition-colors hover:text-chalk"
-              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
             >
               {showPassword ? (
                 <EyeOff aria-hidden="true" className="size-4" />
@@ -160,7 +174,19 @@ export function LoginPage() {
           <div className="mt-2 flex flex-col gap-1.5">
             <button
               type="button"
-              onClick={() => fillDemo('bidder@aurebid.com', 'bidder123')}
+              onClick={() =>
+                fillDemo("auctioneer@aurebid.com", "auctioneer123")
+              }
+              className="flex items-center justify-between rounded-md px-1 py-0.5 text-left text-xs text-mist transition-colors hover:text-chalk"
+            >
+              <span>Leiloeiro</span>
+              <span className="font-mono text-[0.6875rem] text-mist-dim">
+                auctioneer@aurebid.com
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemo("bidder@aurebid.com", "bidder123")}
               className="flex items-center justify-between rounded-md px-1 py-0.5 text-left text-xs text-mist transition-colors hover:text-chalk"
             >
               <span>Licitante</span>
@@ -170,12 +196,12 @@ export function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => fillDemo('auctioneer@aurebid.com', 'auctioneer123')}
+              onClick={() => fillDemo("bidder2@aurebid.com", "bidder123")}
               className="flex items-center justify-between rounded-md px-1 py-0.5 text-left text-xs text-mist transition-colors hover:text-chalk"
             >
-              <span>Leiloeiro</span>
+              <span>Licitante 2</span>
               <span className="font-mono text-[0.6875rem] text-mist-dim">
-                auctioneer@aurebid.com
+                bidder2@aurebid.com
               </span>
             </button>
           </div>
