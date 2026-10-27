@@ -10,7 +10,7 @@ import {
   ShieldCheck,
   Wallet,
 } from 'lucide-react';
-import type { Lot } from '@/types/domain';
+import type { Batch } from '@/types/domain';
 import { useAuth } from '@/contexts/AuthContext';
 import { bidsService } from '@/services/bids.service';
 import { walletService } from '@/services/wallet.service';
@@ -30,13 +30,13 @@ import { formatDateTime } from '@/utils/datetime';
 import { presentBidError, type ErrorPresentation } from '@/utils/errors';
 import { SettlementStatusBadge } from '@/components/ui/Badge';
 
-export function BidPanel({ lot }: { lot: Lot }) {
+export function BidPanel({ batch }: { batch: Batch }) {
   const { user, isAuthenticated } = useAuth();
   const { push } = useToast();
   const queryClient = useQueryClient();
   const location = useLocation();
 
-  const minimum = minimumNextBid(lot);
+  const minimum = minimumNextBid(batch);
   const [draft, setDraft] = useState<string | null>(null);
   const [bidError, setBidError] = useState<ErrorPresentation | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -49,11 +49,12 @@ export function BidPanel({ lot }: { lot: Lot }) {
     staleTime: 10_000,
   });
 
-  const ended = lot.status === 'ENDED' || lot.status === 'SETTLED';
-  const upcoming = lot.status === 'SCHEDULED';
-  const cancelled = lot.status === 'CANCELLED';
-  const isSeller = user?.id === lot.sellerId;
-  const highestBid = lot.bids?.[0];
+  const ended = batch.status === 'ENDED' || batch.status === 'SETTLED';
+  const upcoming = batch.status === 'SCHEDULED';
+  const cancelled = batch.status === 'CANCELLED';
+  const isSeller = user?.id === batch.sellerId;
+  const isAuctioneerAccount = user?.role === 'AUCTIONEER';
+  const highestBid = batch.bids?.[0];
   const leading =
     Boolean(user) &&
     Boolean(highestBid) &&
@@ -91,7 +92,7 @@ export function BidPanel({ lot }: { lot: Lot }) {
 
     setSubmitting(true);
     try {
-      const bid = await bidsService.place(lot.id, amount);
+      const bid = await bidsService.place(batch.id, amount);
       push({
         title: 'Lance registrado',
         description: `${formatBRL(bid.amount)} confirmado pelo servidor.`,
@@ -99,8 +100,8 @@ export function BidPanel({ lot }: { lot: Lot }) {
       });
       setDraft(null);
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.lots.detail(lot.id) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.bids.lot(lot.id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.batchs.detail(batch.id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.bids.batch(batch.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.bids.mine }),
         queryClient.invalidateQueries({ queryKey: queryKeys.wallet.detail }),
       ]);
@@ -113,7 +114,7 @@ export function BidPanel({ lot }: { lot: Lot }) {
         tone: presentation.tone,
       });
       void queryClient.invalidateQueries({
-        queryKey: queryKeys.lots.detail(lot.id),
+        queryKey: queryKeys.batchs.detail(batch.id),
       });
     } finally {
       setSubmitting(false);
@@ -139,7 +140,7 @@ export function BidPanel({ lot }: { lot: Lot }) {
 
   if (ended) {
     const winner = highestBid;
-    const settlement = lot.settlement;
+    const settlement = batch.settlement;
     return (
       <div className="surface p-5">
         <div className="flex items-center justify-between gap-3">
@@ -150,7 +151,7 @@ export function BidPanel({ lot }: { lot: Lot }) {
           {winner ? 'Lance vencedor' : 'Encerrado sem lances'}
         </p>
         <p className="numeric mt-1 text-3xl font-medium text-gold-bright">
-          {formatBRL(winner?.amount ?? lot.currentPrice)}
+          {formatBRL(winner?.amount ?? batch.currentPrice)}
         </p>
         {winner && (
           <p className="mt-1 text-xs text-mist-dim">
@@ -160,7 +161,7 @@ export function BidPanel({ lot }: { lot: Lot }) {
           </p>
         )}
         <p className="mt-4 border-t border-line/70 pt-3 text-xs text-mist-dim">
-          Encerrado em {formatDateTime(lot.endsAt)}. A liquidação e o recibo são
+          Encerrado em {formatDateTime(batch.endsAt)}. A liquidação e o recibo são
           processados pelo servidor.
         </p>
         {settlement && (
@@ -194,10 +195,10 @@ export function BidPanel({ lot }: { lot: Lot }) {
         <div className="mt-3 flex items-end justify-between gap-4">
           <div>
             <p className="text-[0.6875rem] tracking-[0.1em] text-mist-dim uppercase">
-              {lot.bidCount > 0 ? 'Maior lance' : 'Lance inicial'}
+              {batch.bidCount > 0 ? 'Maior lance' : 'Lance inicial'}
             </p>
             <p className="numeric mt-1 text-3xl font-medium text-chalk">
-              {formatBRL(lot.currentPrice)}
+              {formatBRL(batch.currentPrice)}
             </p>
           </div>
           <div className="text-right">
@@ -210,15 +211,15 @@ export function BidPanel({ lot }: { lot: Lot }) {
           </div>
         </div>
         <p className="mt-3 text-[0.6875rem] text-mist-dim">
-          Incremento mínimo de {formatBRL(lot.minimumIncrement)} ·{' '}
-          {lot.bidCount} {lot.bidCount === 1 ? 'lance' : 'lances'}
+          Incremento mínimo de {formatBRL(batch.minimumIncrement)} ·{' '}
+          {batch.bidCount} {batch.bidCount === 1 ? 'lance' : 'lances'}
         </p>
       </div>
 
       <div className="p-5">
         {upcoming ? (
           <InlineAlert tone="info" title="Lances abrem em breve">
-            Este lote começa em {formatDateTime(lot.startsAt)}. O relógio e os
+            Este lote começa em {formatDateTime(batch.startsAt)}. O relógio e os
             lances são controlados pelo servidor.
           </InlineAlert>
         ) : !isAuthenticated ? (
@@ -237,10 +238,18 @@ export function BidPanel({ lot }: { lot: Lot }) {
               </Link>
             </p>
           </div>
+        ) : isAuctioneerAccount ? (
+          <InlineAlert tone="info" title="Conta de leiloeiro">
+            Contas de leiloeiro não participam de lances.
+          </InlineAlert>
         ) : isSeller ? (
           <InlineAlert tone="info" title="Este lote é seu">
             Você acompanha a disputa, mas a casa não aceita lance do próprio
             leiloeiro.
+          </InlineAlert>
+        ) : leading ? (
+          <InlineAlert tone="success" title="Você está liderando">
+            Você já tem o maior lance neste lote e não pode dar outro.
           </InlineAlert>
         ) : (
           <div>
@@ -308,7 +317,7 @@ export function BidPanel({ lot }: { lot: Lot }) {
             <div className="mt-3 grid grid-cols-3 gap-2">
               {[0, 1, 2].map((step) => {
                 const quick =
-                  (toCents(minimum) + toCents(lot.minimumIncrement) * step) / 100;
+                  (toCents(minimum) + toCents(batch.minimumIncrement) * step) / 100;
                 return (
                   <button
                     key={step}
@@ -358,8 +367,7 @@ export function BidPanel({ lot }: { lot: Lot }) {
               leftIcon={<Gavel aria-hidden="true" className="size-4" />}
               disabled={belowMinimum}
             >
-              {leading ? 'Aumentar meu lance' : 'Confirmar lance'}
-            </Button>
+              Confirmar lance            </Button>
 
             <p className="mt-3 flex items-start gap-1.5 text-[0.625rem] leading-relaxed text-mist-dim">
               <Landmark aria-hidden="true" className="mt-0.5 size-3 shrink-0" />

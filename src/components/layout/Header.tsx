@@ -46,13 +46,16 @@ export function Header() {
   const links = [
     ...publicNav,
     ...(isAuthenticated
-      ? [
-          { to: '/arremates', label: 'Arremates', end: false },
-          { to: '/carteira', label: 'Carteira', end: false },
-          ...(seller
-            ? [{ to: '/painel', label: 'Painel do leiloeiro', end: false }]
-            : []),
-        ]
+      ? seller
+        ? [
+            { to: '/painel', label: 'Painel do leiloeiro', end: false },
+            { to: '/painel/resultados', label: 'Resultados', end: false },
+            { to: '/painel/lotes/novo', label: 'Novo lote', end: false },
+          ]
+        : [
+            { to: '/arremates', label: 'Arremates', end: false },
+            { to: '/carteira', label: 'Carteira', end: false },
+          ]
       : []),
   ];
 

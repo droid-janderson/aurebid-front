@@ -11,11 +11,11 @@ import { formatDateTime } from '@/utils/datetime';
 import { shortHash } from '@/utils/pseudonym';
 import { presentError } from '@/utils/errors';
 
-export function BidHistory({ lotId }: { lotId: string }) {
+export function BidHistory({ batchId }: { batchId: string }) {
   const { user } = useAuth();
   const bidsQuery = useQuery({
-    queryKey: queryKeys.bids.lot(lotId),
-    queryFn: () => bidsService.listForLot(lotId, 1, 30),
+    queryKey: queryKeys.bids.batch(batchId),
+    queryFn: () => bidsService.listForLot(batchId, 1, 30),
     staleTime: 10_000,
   });
 

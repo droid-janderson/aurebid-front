@@ -1,21 +1,21 @@
 import { Search, SlidersHorizontal } from 'lucide-react';
-import type { LotStatus } from '@/types/domain';
+import type { BatchStatus } from '@/types/domain';
 import { Input, Select } from '@/components/ui/Field';
 import { cn } from '@/utils/cn';
 
-export interface LotFilterState {
+export interface BatchFilterState {
   search: string;
-  status: LotStatus | '';
+  status: BatchStatus | '';
   sort: 'ending' | 'startingPrice' | 'newest';
 }
 
-export function LotFilters({
+export function BatchFilters({
   value,
   onChange,
   className,
 }: {
-  value: LotFilterState;
-  onChange: (next: LotFilterState) => void;
+  value: BatchFilterState;
+  onChange: (next: BatchFilterState) => void;
   className?: string;
 }) {
   return (
@@ -50,7 +50,7 @@ export function LotFilters({
         <Select
           value={value.status}
           onChange={(event) =>
-            onChange({ ...value, status: event.target.value as LotStatus | '' })
+            onChange({ ...value, status: event.target.value as BatchStatus | '' })
           }
           aria-label="Filtrar por situação"
           className="min-w-[10.5rem]"
@@ -68,7 +68,7 @@ export function LotFilters({
         onChange={(event) =>
           onChange({
             ...value,
-            sort: event.target.value as LotFilterState['sort'],
+            sort: event.target.value as BatchFilterState['sort'],
           })
         }
         aria-label="Ordenar lotes"
