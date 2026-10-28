@@ -36,11 +36,12 @@ describe('sala do lote', () => {
     renderWithProviders(<AppRoutes />, '/lotes/batch-001');
 
     expect(
-      await screen.findByText('Você está liderando'),
-    ).toBeInTheDocument();
+      (await screen.findAllByText('Você está liderando')).length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByLabelText('Seu lance')).not.toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /Aumentar meu lance/i }),
-    ).toBeInTheDocument();
+      screen.queryByRole('button', { name: /Confirmar lance/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('exibe o erro do servidor quando o saldo é insuficiente', async () => {
