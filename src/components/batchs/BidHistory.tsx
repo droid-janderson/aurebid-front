@@ -13,8 +13,9 @@ import { presentError } from '@/utils/errors';
 
 export function BidHistory({ batchId }: { batchId: string }) {
   const { user } = useAuth();
+  const viewerId = user?.id ?? 'anon';
   const bidsQuery = useQuery({
-    queryKey: queryKeys.bids.batch(batchId),
+    queryKey: queryKeys.bids.batch(batchId, viewerId),
     queryFn: () => bidsService.listForLot(batchId, 1, 30),
     staleTime: 10_000,
   });
@@ -55,7 +56,10 @@ export function BidHistory({ batchId }: { batchId: string }) {
     <div>
       <ol className="divide-y divide-line/60 overflow-hidden rounded-xl border border-line">
         {bids.map((bid, index) => {
-          const isMe = bid.bidder.id === user?.id;
+          const isMe = Boolean(bid.bidder?.isMine);
+          const bidderLabel = isMe
+            ? 'Você'
+            : (bid.bidder?.name ?? bid.bidder?.label ?? 'Licitante');
           return (
             <li
               key={bid.id}
@@ -76,7 +80,7 @@ export function BidHistory({ batchId }: { batchId: string }) {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-2 truncate text-[0.8125rem] font-medium text-chalk">
-                  {isMe ? 'Você' : bid.bidder.name}
+                  {bidderLabel}
                   {index === 0 && (
                     <span className="shrink-0 rounded-full border border-gold/30 px-1.5 py-0.5 font-mono text-[0.5rem] tracking-[0.1em] text-gold uppercase">
                       Líder

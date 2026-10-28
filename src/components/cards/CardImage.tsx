@@ -11,10 +11,6 @@ interface CardImageProps {
   sizes?: string;
 }
 
-/**
- * Card art is never cropped or stretched: the full card is contained inside
- * a 3:4 frame, with a branded fallback when the image is missing or broken.
- */
 export function CardImage({
   src,
   alt,

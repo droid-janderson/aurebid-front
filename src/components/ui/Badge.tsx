@@ -22,13 +22,32 @@ const tones: Record<BadgeTone, string> = {
   muted: 'border-line bg-transparent text-mist-dim',
 };
 
+const solidTones: Record<BadgeTone, string> = {
+  neutral: 'border-line-strong text-chalk',
+  gold: 'border-gold/60 text-gold-bright',
+  live: 'border-win/60 text-win',
+  win: 'border-win/60 text-win',
+  loss: 'border-loss/60 text-loss',
+  info: 'border-info/60 text-info',
+  muted: 'border-line-strong text-mist',
+};
+
+export type BadgeVariant = 'soft' | 'solid';
+
+const softTypography = 'text-[0.625rem] font-medium tracking-[0.12em]';
+const solidTypography = 'text-[0.6875rem] font-semibold tracking-[0.08em]';
+const solidPlate =
+  'bg-ink/85 shadow-[0_2px_10px_rgba(0,0,0,0.45)] backdrop-blur-md';
+
 export function Badge({
   tone = 'neutral',
+  variant = 'soft',
   children,
   dot = false,
   className,
 }: {
   tone?: BadgeTone;
+  variant?: BadgeVariant;
   children: ReactNode;
   dot?: boolean;
   className?: string;
@@ -36,8 +55,9 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[0.625rem] font-medium tracking-[0.12em] uppercase',
-        tones[tone],
+        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono uppercase',
+        variant === 'solid' ? solidTypography : softTypography,
+        variant === 'solid' ? [solidPlate, solidTones[tone]] : tones[tone],
         className,
       )}
     >
@@ -72,7 +92,12 @@ export function BatchStatusBadge({
   className?: string;
 }) {
   return (
-    <Badge tone={batchTones[status]} dot={status === 'ACTIVE'} className={className}>
+    <Badge
+      tone={batchTones[status]}
+      variant="solid"
+      dot={status === 'ACTIVE'}
+      className={className}
+    >
       {batchStatusLabel[status]}
     </Badge>
   );

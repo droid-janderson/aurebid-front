@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useLocation } from 'react-router-dom';
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useLocation } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowRight,
@@ -9,26 +9,29 @@ import {
   LockKeyhole,
   ShieldCheck,
   Wallet,
-} from 'lucide-react';
-import type { Batch } from '@/types/domain';
-import { useAuth } from '@/contexts/AuthContext';
-import { bidsService } from '@/services/bids.service';
-import { walletService } from '@/services/wallet.service';
-import { queryKeys } from '@/services/query-keys';
-import { useToast } from '@/components/ui/Toast';
-import { InlineAlert } from '@/components/feedback/InlineAlert';
-import { Button, buttonStyles } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Field';
+} from "lucide-react";
+import type { Batch } from "@/types/domain";
+import { useAuth } from "@/contexts/AuthContext";
+import { bidsService } from "@/services/bids.service";
+import { walletService } from "@/services/wallet.service";
+import { queryKeys } from "@/services/query-keys";
+import { useToast } from "@/components/ui/Toast";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
+import { Button, buttonStyles } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Field";
 import {
   formatAmountInput,
   formatBRL,
   minimumNextBid,
   parseBRLInput,
   toCents,
-} from '@/utils/money';
-import { formatDateTime } from '@/utils/datetime';
-import { presentBidError, type ErrorPresentation } from '@/utils/errors';
-import { SettlementStatusBadge } from '@/components/ui/Badge';
+} from "@/utils/money";
+import { formatDateTime } from "@/utils/datetime";
+import { presentBidError, type ErrorPresentation } from "@/utils/errors";
+import { SettlementStatusBadge } from "@/components/ui/Badge";
+import { Countdown } from "@/components/batchs/Countdown";
+import { useCountdown } from "@/hooks/useCountdown";
+import { toApiError } from "@/services/api-error";
 
 export function BidPanel({ batch }: { batch: Batch }) {
   const { user, isAuthenticated } = useAuth();
@@ -40,6 +43,11 @@ export function BidPanel({ batch }: { batch: Batch }) {
   const [draft, setDraft] = useState<string | null>(null);
   const [bidError, setBidError] = useState<ErrorPresentation | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [assumedLeading, setAssumedLeading] = useState<{
+    batchId: string;
+    viewerId: string;
+    amount: number;
+  } | null>(null);
   const value = draft ?? formatAmountInput(minimum);
 
   const walletQuery = useQuery({
@@ -49,16 +57,27 @@ export function BidPanel({ batch }: { batch: Batch }) {
     staleTime: 10_000,
   });
 
-  const ended = batch.status === 'ENDED' || batch.status === 'SETTLED';
-  const upcoming = batch.status === 'SCHEDULED';
-  const cancelled = batch.status === 'CANCELLED';
+  const ended = batch.status === "ENDED" || batch.status === "SETTLED";
+  const upcoming = batch.status === "SCHEDULED";
+  const cancelled = batch.status === "CANCELLED";
+  const remaining = useCountdown(batch.endsAt, batch.status === "ACTIVE");
+  const closed = batch.status === "ACTIVE" && remaining.expired;
+  const showUrgentCountdown =
+    batch.status === "ACTIVE" &&
+    !remaining.expired &&
+    remaining.totalMs <= 10 * 60 * 1000;
   const isSeller = user?.id === batch.sellerId;
-  const isAuctioneerAccount = user?.role === 'AUCTIONEER';
+  const isAuctioneerAccount = user?.role === "AUCTIONEER";
   const highestBid = batch.bids?.[0];
-  const leading =
+  const leadingFromServer = Boolean(user) && Boolean(highestBid?.bidder?.isMine);
+  const leadingLocally =
     Boolean(user) &&
-    Boolean(highestBid) &&
-    highestBid?.bidderId === user?.id;
+    assumedLeading !== null &&
+    assumedLeading.batchId === batch.id &&
+    assumedLeading.viewerId === user?.id &&
+    (highestBid === undefined ||
+      toCents(assumedLeading.amount) >= toCents(highestBid.amount));
+  const leading = leadingFromServer || leadingLocally;
   const loginTarget = `/login?from=${encodeURIComponent(
     `${location.pathname}${location.search}`,
   )}`;
@@ -67,46 +86,64 @@ export function BidPanel({ batch }: { batch: Batch }) {
   const belowMinimum = amount > 0 && toCents(amount) < toCents(minimum);
   const available = walletQuery.data?.availableAmount;
   const exceedsBalance =
-    available !== undefined && amount > 0 && toCents(amount) > toCents(available);
+    available !== undefined &&
+    amount > 0 &&
+    toCents(amount) > toCents(available);
 
   const placeBid = async () => {
     setBidError(null);
 
     if (!amount || amount <= 0) {
       setBidError({
-        title: 'Informe um valor',
-        message: 'Digite o valor do seu lance em reais.',
-        tone: 'warning',
+        title: "Informe um valor",
+        message: "Digite o valor do seu lance em reais.",
+        tone: "warning",
       });
       return;
     }
 
     if (belowMinimum) {
       setBidError({
-        title: 'Abaixo do mínimo',
+        title: "Abaixo do mínimo",
         message: `O próximo lance aceito parte de ${formatBRL(minimum)}.`,
-        tone: 'warning',
+        tone: "warning",
       });
       return;
     }
 
     setSubmitting(true);
     try {
-      const bid = await bidsService.place(batch.id, amount);
+      const receipt = await bidsService.place(batch.id, amount);
+      setAssumedLeading({
+        batchId: batch.id,
+        viewerId: user?.id ?? "anon",
+        amount: receipt.amount,
+      });
       push({
-        title: 'Lance registrado',
-        description: `${formatBRL(bid.amount)} confirmado pelo servidor.`,
-        tone: 'success',
+        title: "Lance registrado",
+        description: `${formatBRL(receipt.amount)} confirmado pelo servidor.`,
+        tone: "success",
       });
       setDraft(null);
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.batchs.detail(batch.id) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.bids.batch(batch.id) }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.batchs.details(batch.id),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.bids.forBatch(batch.id),
+        }),
         queryClient.invalidateQueries({ queryKey: queryKeys.bids.mine }),
         queryClient.invalidateQueries({ queryKey: queryKeys.wallet.detail }),
       ]);
     } catch (error) {
       const presentation = presentBidError(error, minimum);
+      if (toApiError(error).code === "ALREADY_LEADING" && user) {
+        setAssumedLeading({
+          batchId: batch.id,
+          viewerId: user.id,
+          amount: batch.currentPrice,
+        });
+      }
       setBidError(presentation);
       push({
         title: presentation.title,
@@ -114,7 +151,7 @@ export function BidPanel({ batch }: { batch: Batch }) {
         tone: presentation.tone,
       });
       void queryClient.invalidateQueries({
-        queryKey: queryKeys.batchs.detail(batch.id),
+        queryKey: queryKeys.batchs.details(batch.id),
       });
     } finally {
       setSubmitting(false);
@@ -127,10 +164,7 @@ export function BidPanel({ batch }: { batch: Batch }) {
         <InlineAlert tone="error" title="Lote cancelado">
           Este lote foi retirado da casa. Nenhum lance é aceito.
         </InlineAlert>
-        <Link
-          to="/"
-          className={buttonStyles('secondary', 'md', 'mt-4 w-full')}
-        >
+        <Link to="/" className={buttonStyles("secondary", "md", "mt-4 w-full")}>
           Ver outros lotes
           <ArrowRight aria-hidden="true" className="size-4" />
         </Link>
@@ -148,26 +182,26 @@ export function BidPanel({ batch }: { batch: Batch }) {
           {settlement && <SettlementStatusBadge status={settlement.status} />}
         </div>
         <p className="mt-3 text-sm text-mist">
-          {winner ? 'Lance vencedor' : 'Encerrado sem lances'}
+          {winner ? "Lance vencedor" : "Encerrado sem lances"}
         </p>
         <p className="numeric mt-1 text-3xl font-medium text-gold-bright">
           {formatBRL(winner?.amount ?? batch.currentPrice)}
         </p>
         {winner && (
           <p className="mt-1 text-xs text-mist-dim">
-            {winner.bidder.id === user?.id
-              ? 'Você arrematou este lote.'
-              : `Arrematado por ${winner.bidder.name}.`}
+            {winner.bidder?.isMine
+              ? "Você arrematou este lote."
+              : `Arrematado por ${winner.bidder?.label ?? "licitante"}.`}
           </p>
         )}
         <p className="mt-4 border-t border-line/70 pt-3 text-xs text-mist-dim">
-          Encerrado em {formatDateTime(batch.endsAt)}. A liquidação e o recibo são
-          processados pelo servidor.
+          Encerrado em {formatDateTime(batch.endsAt)}. A liquidação e o recibo
+          são processados pelo servidor.
         </p>
-        {settlement && (
+        {settlement?.publicToken && (
           <Link
             to={`/recibo/${settlement.publicToken}`}
-            className={buttonStyles('secondary', 'md', 'mt-4 w-full')}
+            className={buttonStyles("secondary", "md", "mt-4 w-full")}
           >
             Abrir recibo público
             <ArrowRight aria-hidden="true" className="size-4" />
@@ -182,7 +216,7 @@ export function BidPanel({ batch }: { batch: Batch }) {
       <div className="border-b border-line/70 bg-[linear-gradient(160deg,rgba(215,179,106,0.09),transparent_60%)] p-5">
         <div className="flex items-center justify-between gap-3">
           <p className="eyebrow">
-            {leading ? 'Você está liderando' : 'Disputar lote'}
+            {leading ? "Você está liderando" : "Disputar lote"}
           </p>
           {leading && (
             <span className="inline-flex items-center gap-1.5 font-mono text-[0.625rem] tracking-[0.12em] text-win uppercase">
@@ -195,7 +229,7 @@ export function BidPanel({ batch }: { batch: Batch }) {
         <div className="mt-3 flex items-end justify-between gap-4">
           <div>
             <p className="text-[0.6875rem] tracking-[0.1em] text-mist-dim uppercase">
-              {batch.bidCount > 0 ? 'Maior lance' : 'Lance inicial'}
+              {batch.bidCount > 0 ? "Maior lance" : "Lance inicial"}
             </p>
             <p className="numeric mt-1 text-3xl font-medium text-chalk">
               {formatBRL(batch.currentPrice)}
@@ -211,13 +245,37 @@ export function BidPanel({ batch }: { batch: Batch }) {
           </div>
         </div>
         <p className="mt-3 text-[0.6875rem] text-mist-dim">
-          Incremento mínimo de {formatBRL(batch.minimumIncrement)} ·{' '}
-          {batch.bidCount} {batch.bidCount === 1 ? 'lance' : 'lances'}
+          Incremento mínimo de {formatBRL(batch.minimumIncrement)} ·{" "}
+          {batch.bidCount} {batch.bidCount === 1 ? "lance" : "lances"}
         </p>
       </div>
 
       <div className="p-5">
-        {upcoming ? (
+        {showUrgentCountdown && (
+          <div
+            className="mb-4 rounded-xl border border-gold/35 bg-gold/[0.06] p-4"
+            role="status"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="eyebrow text-gold">Fechamento iminente</p>
+              <span className="font-mono text-[0.625rem] tracking-[0.12em] text-mist-dim uppercase">
+                Últimos 10 minutos
+              </span>
+            </div>
+            <Countdown target={batch.endsAt} variant="large" className="mt-3" />
+            <p className="mt-3 text-[0.6875rem] leading-relaxed text-mist-dim">
+              Lances nos últimos 2 minutos estendem o fechamento do lote em mais
+              2 minutos.
+            </p>
+          </div>
+        )}
+
+        {closed ? (
+          <InlineAlert tone="info" title="Lances encerrados">
+            O prazo do lote terminou pelo relógio do servidor. Aguardando a
+            apuração e o processamento da liquidação.
+          </InlineAlert>
+        ) : upcoming ? (
           <InlineAlert tone="info" title="Lances abrem em breve">
             Este lote começa em {formatDateTime(batch.startsAt)}. O relógio e os
             lances são controlados pelo servidor.
@@ -227,12 +285,15 @@ export function BidPanel({ batch }: { batch: Batch }) {
             <p className="text-sm leading-relaxed text-mist">
               Entre na sua conta para reservar saldo e registrar um lance.
             </p>
-            <Link to={loginTarget} className={buttonStyles('primary', 'md', 'mt-4 w-full')}>
+            <Link
+              to={loginTarget}
+              className={buttonStyles("primary", "md", "mt-4 w-full")}
+            >
               <LockKeyhole aria-hidden="true" className="size-4" />
               Entrar para dar lance
             </Link>
             <p className="mt-3 text-center text-[0.6875rem] text-mist-dim">
-              Ainda não tem conta?{' '}
+              Ainda não tem conta?{" "}
               <Link to="/cadastro" className="text-gold hover:text-gold-bright">
                 Cadastre-se
               </Link>
@@ -260,12 +321,6 @@ export function BidPanel({ batch }: { batch: Batch }) {
                 className="mb-4"
               >
                 {bidError.message}
-              </InlineAlert>
-            )}
-
-            {leading && (
-              <InlineAlert tone="success" title="Seu lance é o maior" className="mb-4">
-                Um novo lance seu precisa superar o próprio valor atual.
               </InlineAlert>
             )}
 
@@ -308,7 +363,7 @@ export function BidPanel({ batch }: { batch: Batch }) {
                   setDraft(null);
                   setBidError(null);
                 }}
-                className="text-[0.6875rem] font-medium text-gold transition-colors hover:text-gold-bright"
+                className="text-[0.6875rem] font-medium text-gold transition-colors cursor-pointer hover:text-gold-bright"
               >
                 Usar mínimo
               </button>
@@ -317,7 +372,8 @@ export function BidPanel({ batch }: { batch: Batch }) {
             <div className="mt-3 grid grid-cols-3 gap-2">
               {[0, 1, 2].map((step) => {
                 const quick =
-                  (toCents(minimum) + toCents(batch.minimumIncrement) * step) / 100;
+                  (toCents(minimum) + toCents(batch.minimumIncrement) * step) /
+                  100;
                 return (
                   <button
                     key={step}
@@ -326,7 +382,7 @@ export function BidPanel({ batch }: { batch: Batch }) {
                       setDraft(formatAmountInput(quick));
                       setBidError(null);
                     }}
-                    className="numeric rounded-lg border border-line bg-ink/50 py-2 text-[0.6875rem] text-mist transition-colors hover:border-gold/40 hover:text-chalk"
+                    className="numeric rounded-lg border border-line cursor-pointer bg-ink/50 py-2 text-[0.6875rem] text-mist transition-colors hover:border-gold/40 hover:text-chalk"
                   >
                     {formatBRL(quick)}
                   </button>
@@ -344,30 +400,34 @@ export function BidPanel({ batch }: { batch: Batch }) {
               </span>
               <span className="numeric text-xs text-mist">
                 {walletQuery.isPending
-                  ? 'consultando…'
+                  ? "consultando…"
                   : available !== undefined
                     ? formatBRL(available)
-                    : '—'}
+                    : "—"}
               </span>
             </div>
 
             {exceedsBalance && (
               <p className="mt-2 flex items-start gap-1.5 text-[0.6875rem] leading-relaxed text-gold">
-                <AlertTriangle aria-hidden="true" className="mt-0.5 size-3 shrink-0" />
+                <AlertTriangle
+                  aria-hidden="true"
+                  className="mt-0.5 size-3 shrink-0"
+                />
                 O valor supera o saldo disponível agora. O servidor fará a
                 validação definitiva.
               </p>
             )}
 
             <Button
-              className="mt-4 w-full"
+              className="mt-4 w-full cursor-pointer"
               size="lg"
               loading={submitting}
               onClick={() => void placeBid()}
               leftIcon={<Gavel aria-hidden="true" className="size-4" />}
               disabled={belowMinimum}
             >
-              Confirmar lance            </Button>
+              Confirmar lance{" "}
+            </Button>
 
             <p className="mt-3 flex items-start gap-1.5 text-[0.625rem] leading-relaxed text-mist-dim">
               <Landmark aria-hidden="true" className="mt-0.5 size-3 shrink-0" />

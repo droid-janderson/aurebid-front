@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { cn } from '@/utils/cn';
+import type { ReactNode } from "react";
+import { cn } from "@/utils/cn";
 
 export function PageHeader({
   eyebrow,
@@ -17,20 +17,24 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        'flex flex-col gap-5 border-b border-line/70 pb-7 sm:flex-row sm:items-end sm:justify-between',
+        "flex flex-col gap-5 border-b border-line/70 pb-7 sm:flex-row sm:items-end sm:justify-between",
         className,
       )}
     >
       <div className="min-w-0">
         {eyebrow && <p className="eyebrow">{eyebrow}</p>}
-        <h1 className="display mt-2 text-3xl text-chalk sm:text-4xl">{title}</h1>
+        <h1 className="display mt-2 text-3xl text-chalk sm:text-4xl">
+          {title}
+        </h1>
         {description && (
           <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-mist">
             {description}
           </p>
         )}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
+      {actions && (
+        <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>
+      )}
     </div>
   );
 }
@@ -51,7 +55,7 @@ export function SectionHeader({
   return (
     <div
       className={cn(
-        'flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between',
+        "flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between",
         className,
       )}
     >

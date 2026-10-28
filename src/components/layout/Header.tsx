@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { useState } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   ChevronDown,
   LogOut,
@@ -10,13 +10,13 @@ import {
   ShieldCheck,
   Wallet,
   X,
-} from 'lucide-react';
-import { Logo } from '@/components/ui/Logo';
-import { Button } from '@/components/ui/Button';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/components/ui/Toast';
-import { cn } from '@/utils/cn';
-import { roleLabel, isAuctioneer } from '@/utils/labels';
+} from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
+import { Button, buttonStyles } from "@/components/ui/Button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/Toast";
+import { cn } from "@/utils/cn";
+import { roleLabel, isAuctioneer } from "@/utils/labels";
 
 function initials(name: string) {
   return name
@@ -24,10 +24,10 @@ function initials(name: string) {
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
-    .join('');
+    .join("");
 }
 
-const publicNav = [{ to: '/', label: 'Vitrine', end: true }];
+const publicNav = [{ to: "/", label: "Vitrine", end: true }];
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -37,8 +37,8 @@ export function Header() {
 
   const handleLogout = async () => {
     await logout();
-    push({ title: 'Sessão encerrada', tone: 'info' });
-    navigate('/');
+    push({ title: "Sessão encerrada", tone: "info" });
+    navigate("/");
   };
 
   const seller = isAuctioneer(user?.role);
@@ -48,13 +48,12 @@ export function Header() {
     ...(isAuthenticated
       ? seller
         ? [
-            { to: '/painel', label: 'Painel do leiloeiro', end: false },
-            { to: '/painel/resultados', label: 'Resultados', end: false },
-            { to: '/painel/lotes/novo', label: 'Novo lote', end: false },
+            { to: "/painel", label: "Painel do leiloeiro", end: false },
+            { to: "/painel/resultados", label: "Resultados", end: false },
           ]
         : [
-            { to: '/arremates', label: 'Arremates', end: false },
-            { to: '/carteira', label: 'Carteira', end: false },
+            { to: "/arremates", label: "Arremates", end: false },
+            { to: "/carteira", label: "Carteira", end: false },
           ]
       : []),
   ];
@@ -64,7 +63,10 @@ export function Header() {
       <div className="mx-auto flex h-[var(--header-height)] max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
         <Logo />
 
-        <nav aria-label="Navegação principal" className="hidden items-center gap-1 lg:flex">
+        <nav
+          aria-label="Navegação principal"
+          className="hidden items-center gap-1 lg:flex"
+        >
           {links.map((link) => (
             <NavLink
               key={link.to}
@@ -72,10 +74,10 @@ export function Header() {
               end={link.end}
               className={({ isActive }) =>
                 cn(
-                  'rounded-md px-3 py-2 text-[0.8125rem] font-medium transition-colors',
+                  "rounded-md px-3 py-2 text-[0.8125rem] font-medium transition-colors",
                   isActive
-                    ? 'text-gold'
-                    : 'text-mist hover:bg-white/[0.04] hover:text-chalk',
+                    ? "text-gold"
+                    : "text-mist hover:bg-white/[0.04] hover:text-chalk",
                 )
               }
             >
@@ -88,7 +90,7 @@ export function Header() {
           {isAuthenticated && seller && (
             <Link
               to="/painel/lotes/novo"
-              className="hidden items-center gap-1.5 rounded-lg border border-gold/25 bg-gold/[0.06] px-3 py-2 text-[0.8125rem] font-medium text-gold-bright transition-colors hover:border-gold/45 hover:bg-gold/10 sm:inline-flex"
+              className={buttonStyles("primary", "sm", "hidden sm:inline-flex")}
             >
               <Plus aria-hidden="true" className="size-3.5" />
               Novo lote
@@ -114,7 +116,10 @@ export function Header() {
                       {roleLabel[user.role]}
                     </span>
                   </span>
-                  <ChevronDown aria-hidden="true" className="size-3.5 text-mist-dim" />
+                  <ChevronDown
+                    aria-hidden="true"
+                    className="size-3.5 text-mist-dim"
+                  />
                 </button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
@@ -124,26 +129,37 @@ export function Header() {
                   sideOffset={8}
                 >
                   <div className="border-b border-line px-2.5 py-2">
-                    <p className="truncate text-xs font-medium text-chalk">{user.name}</p>
-                    <p className="truncate text-[0.6875rem] text-mist-dim">{user.email}</p>
+                    <p className="truncate text-xs font-medium text-chalk">
+                      {user.name}
+                    </p>
+                    <p className="truncate text-[0.6875rem] text-mist-dim">
+                      {user.email}
+                    </p>
                   </div>
-                  <DropdownMenu.Item asChild>
-                    <Link to="/arremates" className="dropdown-item mt-1">
-                      <Receipt aria-hidden="true" className="size-3.5" />
-                      Meus arremates
-                    </Link>
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item asChild>
-                    <Link to="/carteira" className="dropdown-item">
-                      <Wallet aria-hidden="true" className="size-3.5" />
-                      Carteira
-                    </Link>
-                  </DropdownMenu.Item>
+                  {!seller && (
+                    <>
+                      <DropdownMenu.Item asChild>
+                        <Link to="/arremates" className="dropdown-item mt-1">
+                          <Receipt aria-hidden="true" className="size-3.5" />
+                          Meus arremates
+                        </Link>
+                      </DropdownMenu.Item>
+                      <DropdownMenu.Item asChild>
+                        <Link to="/carteira" className="dropdown-item">
+                          <Wallet aria-hidden="true" className="size-3.5" />
+                          Carteira
+                        </Link>
+                      </DropdownMenu.Item>
+                    </>
+                  )}
                   {seller && (
                     <>
                       <DropdownMenu.Item asChild>
                         <Link to="/painel" className="dropdown-item">
-                          <ShieldCheck aria-hidden="true" className="size-3.5" />
+                          <ShieldCheck
+                            aria-hidden="true"
+                            className="size-3.5"
+                          />
                           Painel do leiloeiro
                         </Link>
                       </DropdownMenu.Item>
@@ -175,7 +191,10 @@ export function Header() {
                 Entrar
               </Link>
               <Link to="/cadastro">
-                <Button size="sm" className="hidden sm:inline-flex">
+                <Button
+                  size="sm"
+                  className="hidden cursor-pointer sm:inline-flex"
+                >
                   Criar conta
                 </Button>
               </Link>
@@ -188,7 +207,7 @@ export function Header() {
             className="flex size-10 items-center justify-center rounded-lg border border-line bg-raised/60 text-mist transition-colors hover:text-chalk lg:hidden"
             aria-expanded={mobileOpen}
             aria-controls="mobile-navigation"
-            aria-label={mobileOpen ? 'Fechar menu' : 'Abrir menu'}
+            aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
           >
             {mobileOpen ? (
               <X aria-hidden="true" className="size-5" />
@@ -213,10 +232,10 @@ export function Header() {
                 onClick={() => setMobileOpen(false)}
                 className={({ isActive }) =>
                   cn(
-                    'rounded-lg px-3 py-2.5 text-sm font-medium',
+                    "rounded-lg px-3 py-2.5 text-sm font-medium",
                     isActive
-                      ? 'bg-gold/10 text-gold'
-                      : 'text-mist hover:bg-white/[0.04] hover:text-chalk',
+                      ? "bg-gold/10 text-gold"
+                      : "text-mist hover:bg-white/[0.04] hover:text-chalk",
                   )
                 }
               >
@@ -235,7 +254,7 @@ export function Header() {
                 <Link
                   to="/cadastro"
                   onClick={() => setMobileOpen(false)}
-                  className="rounded-lg bg-gold px-3 py-2.5 text-center text-sm font-semibold text-ink"
+                  className={buttonStyles("primary", "md", "w-full")}
                 >
                   Criar conta
                 </Link>
@@ -245,7 +264,7 @@ export function Header() {
               <Link
                 to="/painel/lotes/novo"
                 onClick={() => setMobileOpen(false)}
-                className="mt-3 flex items-center justify-center gap-2 rounded-lg border border-gold/30 bg-gold/[0.08] px-3 py-2.5 text-sm font-medium text-gold-bright"
+                className={buttonStyles("primary", "md", "mt-3 w-full")}
               >
                 <Plus aria-hidden="true" className="size-4" />
                 Publicar novo lote
