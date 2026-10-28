@@ -1,5 +1,6 @@
 import { io, type Socket } from 'socket.io-client';
 import { env } from '@/utils/env';
+import { sessionStore } from '@/services/session.store';
 import type {
   RealtimeClient,
   RealtimeEventMap,
@@ -11,6 +12,7 @@ const EVENTS: Array<keyof RealtimeEventMap> = [
   'bid:new',
   'auction:status_change',
   'auction:ended',
+  'auction:extended',
   'auction:timer',
 ];
 
@@ -48,6 +50,11 @@ export class SocketRealtimeClient implements RealtimeClient {
     });
 
     this.socket = socket;
+
+    socket.io.on('reconnect_attempt', () => {
+      const token = sessionStore.getAccessToken();
+      if (token) socket.auth = { token };
+    });
 
     socket.on('connect', () => {
       this.setStatus('connected');

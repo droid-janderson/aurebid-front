@@ -4,14 +4,12 @@ import { getRealtimeClient } from '@/realtime';
 import type { RealtimeStatus } from '@/realtime/types';
 import { queryKeys } from '@/services/query-keys';
 import { sessionStore } from '@/services/session.store';
+import { syncServerClock } from '@/utils/server-clock';
+import { useToast } from '@/components/ui/Toast';
 
-/**
- * Subscribes to a batch room and reconciles server state through the query
- * cache. Events never mutate financial values locally; they invalidate the
- * authoritative queries.
- */
 export function useBatchRoom(batchId: string | undefined, enabled: boolean) {
   const queryClient = useQueryClient();
+  const { push } = useToast();
   const [status, setStatus] = useState<RealtimeStatus>(
     enabled ? 'connecting' : 'idle',
   );
@@ -33,15 +31,16 @@ export function useBatchRoom(batchId: string | undefined, enabled: boolean) {
 
       const refreshLot = () => {
         void queryClient.invalidateQueries({
-          queryKey: queryKeys.batchs.detail(batchId!),
+          queryKey: queryKeys.batchs.details(batchId!),
         });
         void queryClient.invalidateQueries({
-          queryKey: queryKeys.bids.batch(batchId!),
+          queryKey: queryKeys.bids.forBatch(batchId!),
         });
       };
 
       const offBid = client.on('bid:new', (payload) => {
         if (payload.batchId === batchId) {
+          syncServerClock(payload.serverTime);
           refreshLot();
           void queryClient.invalidateQueries({
             queryKey: queryKeys.wallet.detail,
@@ -53,25 +52,44 @@ export function useBatchRoom(batchId: string | undefined, enabled: boolean) {
       });
 
       const offStatus = client.on('auction:status_change', (payload) => {
-        if (payload.batchId === batchId) refreshLot();
+        if (payload.batchId !== batchId) return;
+        syncServerClock(payload.serverTime);
+        refreshLot();
       });
 
       const offEnded = client.on('auction:ended', (payload) => {
-        if (payload.batchId === batchId) {
-          refreshLot();
-          void queryClient.invalidateQueries({
-            queryKey: queryKeys.settlements.mine,
-          });
-          void queryClient.invalidateQueries({
-            queryKey: queryKeys.wallet.detail,
-          });
-        }
+        if (payload.batchId !== batchId) return;
+        syncServerClock(payload.serverTime);
+        refreshLot();
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.settlements.mine,
+        });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.wallet.detail,
+        });
+      });
+
+      const offExtended = client.on('auction:extended', (payload) => {
+        if (payload.batchId !== batchId) return;
+        syncServerClock(payload.serverTime);
+        refreshLot();
+        push({
+          title: 'Tempo estendido',
+          description:
+            'Um lance nos últimos minutos adicionou 2 minutos ao lote.',
+          tone: 'warning',
+        });
+      });
+
+      const offTimer = client.on('auction:timer', (payload) => {
+        if (payload.batchId !== batchId) return;
+        syncServerClock(payload.serverTime);
       });
 
       const offState = client.on('auction:state', (payload) => {
-        if (payload.batchId === batchId) {
-          setStatus('connected');
-        }
+        if (payload.batchId !== batchId) return;
+        syncServerClock(payload.serverTime);
+        setStatus('connected');
       });
 
       const offConnection = client.onStatus((next) => {
@@ -82,6 +100,8 @@ export function useBatchRoom(batchId: string | undefined, enabled: boolean) {
         offBid();
         offStatus();
         offEnded();
+        offExtended();
+        offTimer();
         offState();
         offConnection();
         client.leaveLot(batchId!);
@@ -94,7 +114,7 @@ export function useBatchRoom(batchId: string | undefined, enabled: boolean) {
       cancelled = true;
       cleanup?.();
     };
-  }, [batchId, enabled, queryClient]);
+  }, [batchId, enabled, queryClient, push]);
 
   return enabled && batchId ? status : 'idle';
 }

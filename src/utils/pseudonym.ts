@@ -1,4 +1,3 @@
-/** Stable, non-sensitive public label derived from an internal identifier. */
 export function pseudonymFor(id: string, prefix = 'Licitante'): string {
   let hash = 0x811c9dc5;
   for (let index = 0; index < id.length; index += 1) {

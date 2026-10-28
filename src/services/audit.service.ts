@@ -8,8 +8,8 @@ export interface AuditRecord {
   previousHash: string | null;
   createdAt: string;
   bidId: string;
-  amount: number;
-  bidder: { id: string | null };
+  amount: number | null;
+  bidder: { label: string } | null;
 }
 
 export const auditService = {

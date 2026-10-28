@@ -84,21 +84,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.removeEventListener(SESSION_EXPIRED_EVENT, handleExpired);
   }, [queryClient]);
 
-  const login = useCallback(async (input: LoginInput) => {
-    const session = await authService.login(input);
-    sessionStore.setTokens(session);
-    setUser(session.user);
-    setStatus('authenticated');
-    return session.user;
-  }, []);
+  const login = useCallback(
+    async (input: LoginInput) => {
+      const session = await authService.login(input);
+      sessionStore.setTokens(session);
+      setUser(session.user);
+      setStatus('authenticated');
+      queryClient.clear();
+      return session.user;
+    },
+    [queryClient],
+  );
 
-  const register = useCallback(async (input: RegisterInput) => {
-    const session = await authService.register(input);
-    sessionStore.setTokens(session);
-    setUser(session.user);
-    setStatus('authenticated');
-    return session.user;
-  }, []);
+  const register = useCallback(
+    async (input: RegisterInput) => {
+      const session = await authService.register(input);
+      sessionStore.setTokens(session);
+      setUser(session.user);
+      setStatus('authenticated');
+      queryClient.clear();
+      return session.user;
+    },
+    [queryClient],
+  );
 
   const logout = useCallback(async () => {
     await authService.logout();

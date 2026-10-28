@@ -98,7 +98,6 @@ export function formatCountdownCompact(parts: CountdownParts): string {
   return `${pad(parts.hours)}:${pad(parts.minutes)}:${pad(parts.seconds)}`;
 }
 
-/** Wall-clock parts in America/Sao_Paulo for datetime-local inputs. */
 export function toZonedInputValue(value: string | Date | null | undefined): string {
   const date = asDate(value) ?? new Date();
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -145,7 +144,6 @@ function offsetAt(date: Date): number {
   return asUtc - date.getTime();
 }
 
-/** Converts an America/Sao_Paulo wall clock input into an ISO UTC string. */
 export function zonedInputToIso(value: string): string | null {
   if (!value) return null;
   const [datePart, timePart = '00:00'] = value.split('T');

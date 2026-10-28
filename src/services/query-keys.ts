@@ -5,13 +5,17 @@ export const queryKeys = {
   batchs: {
     all: ['batchs'] as const,
     list: (filters: BatchListFilters) => ['batchs', 'list', filters] as const,
-    detail: (batchId: string) => ['batchs', 'detail', batchId] as const,
+    details: (batchId: string) => ['batchs', 'detail', batchId] as const,
+    detail: (batchId: string, viewerId: string) =>
+      [...queryKeys.batchs.details(batchId), viewerId] as const,
     managed: (batchId: string) => ['batchs', 'managed', batchId] as const,
     mine: (filters: BatchListFilters) => ['batchs', 'mine', filters] as const,
     summary: ['batchs', 'mine', 'summary'] as const,
   },
   bids: {
-    batch: (batchId: string) => ['bids', 'batch', batchId] as const,
+    forBatch: (batchId: string) => ['bids', 'batch', batchId] as const,
+    batch: (batchId: string, viewerId: string) =>
+      [...queryKeys.bids.forBatch(batchId), viewerId] as const,
     mine: ['bids', 'mine'] as const,
   },
   wallet: {

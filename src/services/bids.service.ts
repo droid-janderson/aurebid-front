@@ -1,9 +1,9 @@
-import type { Bid } from '@/types/domain';
+import type { Bid, BidReceipt } from '@/types/domain';
 import { buildQuery, request, requestWithMeta } from '@/services/http';
 
 export const bidsService = {
   place(batchId: string, amount: number) {
-    return request<Bid>(`/auctions/${encodeURIComponent(batchId)}/bids`, {
+    return request<BidReceipt>(`/auctions/${encodeURIComponent(batchId)}/bids`, {
       method: 'POST',
       body: { amount },
     });

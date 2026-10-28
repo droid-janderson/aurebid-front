@@ -1,23 +1,27 @@
-export type UserRole = 'ADMIN' | 'AUCTIONEER' | 'BIDDER';
+export type UserRole = "AUCTIONEER" | "BIDDER";
 
 export type BatchStatus =
-  | 'DRAFT'
-  | 'SCHEDULED'
-  | 'ACTIVE'
-  | 'ENDED'
-  | 'SETTLED'
-  | 'CANCELLED';
+  | "DRAFT"
+  | "SCHEDULED"
+  | "ACTIVE"
+  | "ENDED"
+  | "SETTLED"
+  | "CANCELLED";
 
-export type SettlementStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+export type SettlementStatus =
+  | "PENDING"
+  | "PROCESSING"
+  | "COMPLETED"
+  | "FAILED";
 
-export type ReservationStatus = 'ACTIVE' | 'RELEASED' | 'CONSUMED';
+export type ReservationStatus = "ACTIVE" | "RELEASED" | "CONSUMED";
 
 export type WalletTransactionType =
-  | 'DEPOSIT'
-  | 'BUYER_SETTLEMENT_DEBIT'
-  | 'SELLER_SETTLEMENT_CREDIT'
-  | 'REFUND'
-  | 'ADJUSTMENT';
+  | "DEPOSIT"
+  | "BUYER_SETTLEMENT_DEBIT"
+  | "SELLER_SETTLEMENT_CREDIT"
+  | "REFUND"
+  | "ADJUSTMENT";
 
 export interface User {
   id: string;
@@ -52,7 +56,7 @@ export interface BatchSeller {
 }
 
 export interface BatchTiming {
-  status: 'scheduled' | 'active' | 'ended';
+  status: "scheduled" | "active" | "ended";
   timeRemaining: number;
   timeUntilStart: number;
 }
@@ -65,31 +69,43 @@ export interface BidAuditStamp {
 }
 
 export interface BidderSummary {
-  id: string;
-  name: string;
+  id?: string;
+  name?: string;
   email?: string;
+  label?: string;
+  isMine?: boolean;
 }
 
 export interface Bid {
   id: string;
   batchId: string;
-  bidderId: string;
+  bidderId?: string;
   amount: number;
   createdAt: string;
+  endsAt?: string;
   bidder: BidderSummary;
   audit?: BidAuditStamp | null;
   batch?: Pick<
     Batch,
-    | 'id'
-    | 'title'
-    | 'status'
-    | 'startingPrice'
-    | 'minimumIncrement'
-    | 'startsAt'
-    | 'endsAt'
-    | 'imageUrl'
-    | 'seller'
+    | "id"
+    | "title"
+    | "status"
+    | "startingPrice"
+    | "minimumIncrement"
+    | "startsAt"
+    | "endsAt"
+    | "imageUrl"
+    | "seller"
   >;
+}
+
+export interface BidReceipt {
+  id: string;
+  amount: number;
+  createdAt: string;
+  endsAt: string;
+  extended: boolean;
+  status: BatchStatus;
 }
 
 export interface BatchSettlementSummary {
@@ -97,8 +113,11 @@ export interface BatchSettlementSummary {
   status: SettlementStatus;
   amount: number;
   receiptNumber: string;
-  publicToken: string;
+  publicToken?: string;
   completedAt: string | null;
+  buyerLabel?: string | null;
+  sellerLabel?: string | null;
+  failureReason?: string | null;
 }
 
 export interface Batch {
@@ -137,8 +156,8 @@ export interface BatchListFilters {
   search?: string;
   minPrice?: number;
   maxPrice?: number;
-  sortBy?: 'createdAt' | 'startsAt' | 'endsAt' | 'title' | 'startingPrice';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "createdAt" | "startsAt" | "endsAt" | "title" | "startingPrice";
+  sortOrder?: "asc" | "desc";
 }
 
 export interface CreateBatchInput {
@@ -152,7 +171,7 @@ export interface CreateBatchInput {
   minimumIncrement: number;
   startsAt: string;
   endsAt: string;
-  status?: 'DRAFT' | 'SCHEDULED';
+  status?: "DRAFT" | "SCHEDULED";
 }
 
 export type UpdateBatchInput = Partial<CreateBatchInput>;
@@ -214,36 +233,42 @@ export interface WalletTransactionPage {
 
 export interface DepositInput {
   amount: number;
-  method: 'PIX' | 'BANK_TRANSFER';
+  method: "PIX" | "BANK_TRANSFER";
 }
 
 export interface Settlement {
   id: string;
   batchId: string;
   winningBidId: string;
-  buyerId: string;
-  sellerId: string;
+  buyerId?: string;
+  sellerId?: string;
   amount: number;
   receiptNumber: string;
-  publicToken: string;
+  publicToken?: string;
   status: SettlementStatus;
   completedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  batchTitle?: string | null;
+  batchImageUrl?: string | null;
+  batchEndsAt?: string | null;
+  buyerLabel?: string | null;
+  sellerLabel?: string | null;
+  failureReason?: string | null;
   batch: {
     id: string;
     title: string;
     status: BatchStatus;
     imageUrl: string | null;
     endsAt: string;
-  };
+  } | null;
   winningBid: {
     id: string;
     amount: number;
     createdAt: string;
   } | null;
-  buyer: BidderSummary;
-  seller: BidderSummary;
+  buyer?: BidderSummary | null;
+  seller?: BidderSummary | null;
 }
 
 export interface AuditEntry {
@@ -267,7 +292,7 @@ export interface AuditEntry {
   } | null;
 }
 
-export type AuditIntegrityStatus = 'VERIFIED' | 'FAILED' | 'UNAVAILABLE';
+export type AuditIntegrityStatus = "VERIFIED" | "FAILED" | "UNAVAILABLE";
 
 export interface AuditVerification {
   status: AuditIntegrityStatus;
@@ -308,11 +333,11 @@ export interface SellerSummary {
   settled: number;
   auctioned: number;
   totalReceived: number;
-  currency: 'BRL';
+  currency: "BRL";
 }
 
 export interface PokemonCardSnapshot {
-  source: 'CARDEX';
+  source: "CARDEX";
   externalId: string;
   setId?: string;
   setName?: string;

@@ -1,6 +1,7 @@
 import { env } from '@/utils/env';
 import { apiErrorFromResponse, ApiError } from '@/services/api-error';
 import type { ApiMeta } from '@/types/api';
+import { syncServerClock } from '@/utils/server-clock';
 import {
   notifySessionExpired,
   sessionStore,
@@ -71,7 +72,11 @@ async function refreshAccessToken(): Promise<string | null> {
   return refreshPromise;
 }
 
-async function send<T>(path: string, options: RequestOptions): Promise<T> {
+async function send<T>(
+  path: string,
+  options: RequestOptions,
+  allowAnonymousFallback = true,
+): Promise<T> {
   const headers: Record<string, string> = {
     Accept: 'application/json',
     ...options.headers,
@@ -108,6 +113,8 @@ async function send<T>(path: string, options: RequestOptions): Promise<T> {
     });
   }
 
+  syncServerClock(response.headers.get('X-Server-Time'));
+
   if (response.status === 401 && options.auth !== false) {
     const isAuthCall =
       path.startsWith('/auth/login') ||
@@ -117,7 +124,10 @@ async function send<T>(path: string, options: RequestOptions): Promise<T> {
     if (!isAuthCall) {
       const newToken = await refreshAccessToken();
       if (newToken) {
-        return send<T>(path, options);
+        return send<T>(path, options, allowAnonymousFallback);
+      }
+      if (allowAnonymousFallback) {
+        return send<T>(path, { ...options, auth: false }, false);
       }
     }
   }

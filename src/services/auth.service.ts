@@ -47,7 +47,7 @@ export const authService = {
     try {
       await request<undefined>('/auth/logout', { method: 'POST' });
     } catch {
-      // Stateless logout: discarding local tokens is enough.
+      return;
     }
   },
   refreshRaw(refreshToken: string) {

@@ -27,7 +27,6 @@ export function formatBRLCompact(value: number): string {
   return compactFormatter.format(value);
 }
 
-/** Converts a BRL amount to integer cents before arithmetic. */
 export function toCents(value: number): number {
   return Math.round(value * 100);
 }
@@ -36,11 +35,6 @@ export function fromCents(cents: number): number {
   return Math.round(cents) / 100;
 }
 
-/**
- * Minimum next bid according to the backend rule:
- * first bid equals starting price, later bids add the minimum increment.
- * Display only — the backend is authoritative.
- */
 export function minimumNextBid(batch: {
   startingPrice: number;
   minimumIncrement: number;
@@ -51,7 +45,6 @@ export function minimumNextBid(batch: {
   return fromCents(toCents(batch.currentPrice) + toCents(batch.minimumIncrement));
 }
 
-/** Accepts "1.234,56", "1234.56" or "1234,56". */
 export function parseBRLInput(raw: string): number | null {
   const cleaned = raw.trim().replace(/\s|R\$/g, '');
   if (!cleaned) return null;

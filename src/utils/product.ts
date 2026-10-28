@@ -23,7 +23,6 @@ function stringList(value: unknown): string[] {
     : [];
 }
 
-/** Extracts display metadata from the flexible productData snapshot. */
 export function cardSnapshot(batch: Pick<Batch, 'productData'>): PokemonCardSnapshot | null {
   const raw = batch.productData;
   if (!raw || typeof raw !== 'object') return null;

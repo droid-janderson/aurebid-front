@@ -21,8 +21,7 @@ export const sessionStore = {
       if (token) sessionStorage.setItem(REFRESH_KEY, token);
       else sessionStorage.removeItem(REFRESH_KEY);
     } catch {
-      // Storage can be unavailable in private browsing; the session then
-      // lasts for the current page only, which is an acceptable fallback.
+      return;
     }
   },
   setTokens(tokens: { accessToken: string; refreshToken: string } | null) {

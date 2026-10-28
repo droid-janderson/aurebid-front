@@ -13,6 +13,9 @@ export interface AuctionStateEvent {
   currentPrice: number;
   bidCount: number;
   timeRemaining: number;
+  startsAt: string;
+  endsAt: string;
+  serverTime: string;
 }
 
 export interface NewBidEvent {
@@ -21,8 +24,9 @@ export interface NewBidEvent {
     id: string;
     amount: number;
     createdAt: string;
-    bidder: { id: string; name: string };
+    bidder: { label: string | null };
   };
+  serverTime: string;
 }
 
 export interface StatusChangeEvent {
@@ -30,18 +34,28 @@ export interface StatusChangeEvent {
   status: BatchStatus;
   startsAt: string;
   endsAt: string;
+  serverTime: string;
 }
 
 export interface AuctionEndedEvent {
   batchId: string;
   status: BatchStatus;
-  winner: { id: string; name: string } | null;
+  winner: { label: string } | null;
   finalPrice: number | null;
+  serverTime: string;
 }
 
 export interface TimerEvent {
   batchId: string;
   timeRemaining: number;
+  serverTime: string;
+}
+
+export interface ExtendedEvent {
+  batchId: string;
+  endsAt: string;
+  extendedBy: number;
+  serverTime: string;
 }
 
 export interface RealtimeEventMap {
@@ -49,6 +63,7 @@ export interface RealtimeEventMap {
   'bid:new': NewBidEvent;
   'auction:status_change': StatusChangeEvent;
   'auction:ended': AuctionEndedEvent;
+  'auction:extended': ExtendedEvent;
   'auction:timer': TimerEvent;
 }
 
