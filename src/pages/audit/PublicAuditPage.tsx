@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   ArrowRight,
@@ -10,54 +10,57 @@ import {
   Link2,
   ShieldAlert,
   ShieldCheck,
-} from 'lucide-react';
-import { batchsService } from '@/services/batchs.service';
-import { auditService } from '@/services/audit.service';
-import { queryKeys } from '@/services/query-keys';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { BatchStatusBadge } from '@/components/ui/Badge';
-import { Button, buttonStyles } from '@/components/ui/Button';
-import { EmptyState } from '@/components/feedback/EmptyState';
-import { ErrorState } from '@/components/feedback/ErrorState';
-import { InlineAlert } from '@/components/feedback/InlineAlert';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { formatBRL } from '@/utils/money';
-import { formatDateTime } from '@/utils/datetime';
-import { presentError } from '@/utils/errors';
-import { pseudonymFor, publicBatchCode } from '@/utils/pseudonym';
-import { cn } from '@/utils/cn';
+} from "lucide-react";
+import { batchsService } from "@/services/batchs.service";
+import { auditService } from "@/services/audit.service";
+import { queryKeys } from "@/services/query-keys";
+import { useAuth } from "@/contexts/AuthContext";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { BatchStatusBadge } from "@/components/ui/Badge";
+import { Button, buttonStyles } from "@/components/ui/Button";
+import { EmptyState } from "@/components/feedback/EmptyState";
+import { ErrorState } from "@/components/feedback/ErrorState";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { formatBRL } from "@/utils/money";
+import { formatDateTime } from "@/utils/datetime";
+import { presentError } from "@/utils/errors";
+import { publicBatchCode } from "@/utils/pseudonym";
+import { cn } from "@/utils/cn";
 
 const verificationCopy = {
   VERIFIED: {
     icon: CheckCircle2,
-    title: 'Cadeia verificada pelo servidor',
-    tone: 'border-win/30 bg-win/[0.05]',
-    iconClass: 'text-win',
+    title: "Cadeia verificada pelo servidor",
+    tone: "border-win/30 bg-win/[0.05]",
+    iconClass: "text-win",
     description:
-      'O servidor conferiu a sequência de hashes dos lances e confirmou a integridade da trilha.',
+      "O servidor conferiu a sequência de hashes dos lances e confirmou a integridade da trilha.",
   },
   FAILED: {
     icon: ShieldAlert,
-    title: 'Falha de integridade detectada',
-    tone: 'border-loss/35 bg-loss/[0.06]',
-    iconClass: 'text-loss',
+    title: "Falha de integridade detectada",
+    tone: "border-loss/35 bg-loss/[0.06]",
+    iconClass: "text-loss",
     description:
-      'A verificação do servidor encontrou uma quebra na cadeia. Não trate este histórico como íntegro.',
+      "A verificação do servidor encontrou uma quebra na cadeia. Não trate este histórico como íntegro.",
   },
   UNAVAILABLE: {
     icon: CircleHelp,
-    title: 'Verificação pública indisponível',
-    tone: 'border-gold/30 bg-gold/[0.05]',
-    iconClass: 'text-gold',
+    title: "Verificação pública indisponível",
+    tone: "border-gold/30 bg-gold/[0.05]",
+    iconClass: "text-gold",
     description:
-      'O ambiente não expõe verificação de integridade pública. Os registros abaixo são os retornados pela API, sem atestado de integridade.',
+      "O ambiente não expõe verificação de integridade pública. Os registros abaixo são os retornados pela API, sem atestado de integridade.",
   },
 } as const;
 
 export function PublicAuditPage() {
   const { batchId } = useParams<{ batchId: string }>();
-  useDocumentTitle('Auditoria pública');
+  const { user } = useAuth();
+  const viewerId = user?.id ?? "anon";
+  useDocumentTitle("Auditoria pública");
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
     try {
@@ -70,19 +73,19 @@ export function PublicAuditPage() {
   };
 
   const batchQuery = useQuery({
-    queryKey: queryKeys.batchs.detail(batchId ?? ''),
+    queryKey: queryKeys.batchs.detail(batchId ?? "", viewerId),
     queryFn: () => batchsService.get(batchId!),
     enabled: Boolean(batchId),
   });
 
   const auditQuery = useQuery({
-    queryKey: queryKeys.audit.entries(batchId ?? ''),
+    queryKey: queryKeys.audit.entries(batchId ?? ""),
     queryFn: () => auditService.list(batchId!),
     enabled: Boolean(batchId),
   });
 
   const verifyQuery = useQuery({
-    queryKey: queryKeys.audit.verify(batchId ?? ''),
+    queryKey: queryKeys.audit.verify(batchId ?? ""),
     queryFn: () => auditService.verify(batchId!),
     enabled: Boolean(batchId),
     retry: false,
@@ -91,7 +94,10 @@ export function PublicAuditPage() {
   if (!batchId) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20">
-        <ErrorState title="Lote não informado" message="O endereço está incompleto." />
+        <ErrorState
+          title="Lote não informado"
+          message="O endereço está incompleto."
+        />
       </div>
     );
   }
@@ -117,7 +123,7 @@ export function PublicAuditPage() {
           message={error.message}
           onRetry={() => void batchQuery.refetch()}
           action={
-            <Link to="/" className={buttonStyles('secondary', 'sm')}>
+            <Link to="/" className={buttonStyles("secondary", "sm")}>
               Ver vitrine
             </Link>
           }
@@ -157,7 +163,7 @@ export function PublicAuditPage() {
             <BatchStatusBadge status={batch.status} />
             <Link
               to={`/lotes/${batch.id}`}
-              className={buttonStyles('secondary', 'sm')}
+              className={buttonStyles("secondary", "sm")}
             >
               Abrir lote
               <ArrowRight aria-hidden="true" className="size-3.5" />
@@ -165,10 +171,10 @@ export function PublicAuditPage() {
             <button
               type="button"
               onClick={() => void handleCopy()}
-              className={buttonStyles('ghost', 'sm')}
+              className={buttonStyles("ghost", "sm", "cursor-copy")}
             >
               <Link2 aria-hidden="true" className="size-3.5" />
-              {copied ? 'Link copiado' : 'Copiar link'}
+              {copied ? "Link copiado" : "Copiar link"}
             </button>
           </>
         }
@@ -179,9 +185,11 @@ export function PublicAuditPage() {
           <p className="text-[0.625rem] tracking-[0.08em] text-mist-dim uppercase">
             Lote
           </p>
-          <p className="mt-1.5 truncate text-sm font-medium text-chalk">{batch.title}</p>
+          <p className="mt-1.5 truncate text-sm font-medium text-chalk">
+            {batch.title}
+          </p>
           <p className="numeric mt-0.5 text-[0.6875rem] text-mist-dim">
-            {batch.bidCount} {batch.bidCount === 1 ? 'lance' : 'lances'} ·{' '}
+            {batch.bidCount} {batch.bidCount === 1 ? "lance" : "lances"} ·{" "}
             {formatBRL(batch.currentPrice)}
           </p>
         </div>
@@ -211,11 +219,11 @@ export function PublicAuditPage() {
         {verifyQuery.isPending ? (
           <Skeleton className="h-24 w-full rounded-xl" />
         ) : verification && copy && VerifyIcon ? (
-          <div className={cn('rounded-xl border p-4', copy.tone)}>
+          <div className={cn("rounded-xl border p-4", copy.tone)}>
             <div className="flex items-start gap-3">
               <VerifyIcon
                 aria-hidden="true"
-                className={cn('mt-0.5 size-4 shrink-0', copy.iconClass)}
+                className={cn("mt-0.5 size-4 shrink-0", copy.iconClass)}
               />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-chalk">{copy.title}</p>
@@ -224,7 +232,9 @@ export function PublicAuditPage() {
                 </p>
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[0.625rem] text-mist-dim">
                   {verification.checkedAt && (
-                    <span>Conferido {formatDateTime(verification.checkedAt)}</span>
+                    <span>
+                      Conferido {formatDateTime(verification.checkedAt)}
+                    </span>
                   )}
                   <span>{verification.entries} entradas verificadas</span>
                   {verification.brokenAtSequence !== undefined && (
@@ -235,14 +245,21 @@ export function PublicAuditPage() {
                   {verification.reason && <span>{verification.reason}</span>}
                 </div>
               </div>
-              <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-mist-dim" />
+              <ShieldCheck
+                aria-hidden="true"
+                className="size-4 shrink-0 text-mist-dim"
+              />
             </div>
           </div>
         ) : null}
       </div>
 
-      {verification?.status === 'UNAVAILABLE' && (
-        <InlineAlert tone="warning" className="mt-4" title="Sem atestado de integridade">
+      {verification?.status === "UNAVAILABLE" && (
+        <InlineAlert
+          tone="warning"
+          className="mt-4"
+          title="Sem atestado de integridade"
+        >
           Esta página não declara que a cadeia é válida. Ela exibe fielmente os
           registros retornados pela API pública de lances. O backend atual expõe
           verificação de integridade apenas para administradores.
@@ -253,7 +270,10 @@ export function PublicAuditPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="eyebrow">Cadeia encadeada</p>
-            <h2 id="cadeia-title" className="mt-1.5 font-display text-2xl text-chalk">
+            <h2
+              id="cadeia-title"
+              className="mt-1.5 font-display text-2xl text-chalk"
+            >
               Registros do lote
             </h2>
           </div>
@@ -293,12 +313,12 @@ export function PublicAuditPage() {
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                       <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-gold/25 bg-gold/[0.06] font-mono text-[0.6875rem] text-gold">
-                        {String(entry.sequence).padStart(2, '0')}
+                        {String(entry.sequence).padStart(2, "0")}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                           <p className="text-[0.8125rem] font-medium text-chalk">
-                            {pseudonymFor(entry.bidder.id ?? '')}
+                            {entry.bidder?.label ?? "Licitante"}
                           </p>
                           <span className="numeric text-[0.8125rem] text-gold-bright">
                             {formatBRL(entry.amount)}
@@ -308,28 +328,31 @@ export function PublicAuditPage() {
                           </span>
                           <span
                             className={cn(
-                              'inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 font-mono text-[0.5rem] tracking-[0.08em] uppercase',
+                              "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 font-mono text-[0.5rem] tracking-[0.08em] uppercase",
                               linked
-                                ? 'border-win/25 text-win'
-                                : 'border-loss/30 text-loss',
+                                ? "border-win/25 text-win"
+                                : "border-loss/30 text-loss",
                             )}
                             title={
                               linked
-                                ? 'O hash anterior coincide com o registro da sequência anterior'
-                                : 'O elo exibido não coincide com o registro anterior'
+                                ? "O hash anterior coincide com o registro da sequência anterior"
+                                : "O elo exibido não coincide com o registro anterior"
                             }
                           >
                             <Link2 aria-hidden="true" className="size-2.5" />
-                            {linked ? 'elo consistente' : 'elo divergente'}
+                            {linked ? "elo consistente" : "elo divergente"}
                           </span>
                         </div>
                         <div className="mt-1.5 grid gap-1 font-mono text-[0.5625rem] text-mist-dim sm:grid-cols-2">
-                          <p className="truncate" title={entry.previousHash ?? 'Origem da cadeia'}>
-                            <span className="text-mist-dim/70">prev:</span>{' '}
-                            {entry.previousHash ?? '— origem —'}
+                          <p
+                            className="truncate"
+                            title={entry.previousHash ?? "Origem da cadeia"}
+                          >
+                            <span className="text-mist-dim/70">prev:</span>{" "}
+                            {entry.previousHash ?? "— origem —"}
                           </p>
                           <p className="truncate" title={entry.currentHash}>
-                            <span className="text-mist-dim/70">hash:</span>{' '}
+                            <span className="text-mist-dim/70">hash:</span>{" "}
                             {entry.currentHash}
                           </p>
                         </div>
@@ -349,15 +372,28 @@ export function PublicAuditPage() {
       </section>
 
       <div className="mt-8 flex flex-wrap gap-2">
-        <Link to={`/lotes/${batch.id}`} className={buttonStyles('secondary', 'sm')}>
+        <Link
+          to={`/lotes/${batch.id}`}
+          className={buttonStyles("secondary", "sm")}
+        >
           <ArrowLeft aria-hidden="true" className="size-3.5" />
           Voltar ao lote
         </Link>
-        <Button variant="ghost" size="sm" onClick={() => void auditQuery.refetch()}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="cursor-pointer"
+          onClick={() => void auditQuery.refetch()}
+        >
           Recarregar registros
         </Button>
         {verifyQuery.isError && (
-          <Button variant="ghost" size="sm" onClick={() => void verifyQuery.refetch()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="cursor-pointer"
+            onClick={() => void verifyQuery.refetch()}
+          >
             Tentar verificação
           </Button>
         )}
