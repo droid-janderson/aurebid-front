@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -14,29 +14,29 @@ import {
   RefreshCw,
   Search,
   Sparkles,
-} from 'lucide-react';
-import type { CatalogCard, CreateBatchInput } from '@/types/domain';
-import { catalogService } from '@/services/catalog.service';
-import { batchsService } from '@/services/batchs.service';
-import { queryKeys } from '@/services/query-keys';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { useToast } from '@/components/ui/Toast';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { CardImage } from '@/components/cards/CardImage';
-import { FieldWrapper, Input, Select, Textarea } from '@/components/ui/Field';
-import { Button, buttonStyles } from '@/components/ui/Button';
-import { InlineAlert } from '@/components/feedback/InlineAlert';
-import { EmptyState } from '@/components/feedback/EmptyState';
-import { Skeleton } from '@/components/ui/Skeleton';
+} from "lucide-react";
+import type { CatalogCard, CreateBatchInput } from "@/types/domain";
+import { catalogService } from "@/services/catalog.service";
+import { batchsService } from "@/services/batchs.service";
+import { queryKeys } from "@/services/query-keys";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useToast } from "@/components/ui/Toast";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { CardImage } from "@/components/cards/CardImage";
+import { FieldWrapper, Input, Select, Textarea } from "@/components/ui/Field";
+import { Button, buttonStyles } from "@/components/ui/Button";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
+import { EmptyState } from "@/components/feedback/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
 import {
   fieldErrorFor,
   presentError,
   type ErrorPresentation,
-} from '@/utils/errors';
-import { parseBRLInput } from '@/utils/money';
-import { toZonedInputValue, zonedInputToIso } from '@/utils/datetime';
-import { cn } from '@/utils/cn';
+} from "@/utils/errors";
+import { parseBRLInput } from "@/utils/money";
+import { toZonedInputValue, zonedInputToIso } from "@/utils/datetime";
+import { cn } from "@/utils/cn";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -45,18 +45,18 @@ const schema = z
   .object({
     title: z
       .string()
-      .min(3, 'O título precisa ter ao menos 3 caracteres.')
-      .max(200, 'Use no máximo 200 caracteres.'),
-    description: z.string().max(5000, 'Use no máximo 5000 caracteres.'),
-    startingPrice: z.string().min(1, 'Informe o lance inicial.'),
-    minimumIncrement: z.string().min(1, 'Informe o incremento mínimo.'),
-    startsAt: z.string().min(1, 'Informe a data de início.'),
-    endsAt: z.string().min(1, 'Informe a data de encerramento.'),
-    status: z.enum(['DRAFT', 'SCHEDULED']),
-    productSource: z.string().min(1, 'Informe a origem do produto.').max(100),
+      .min(3, "O título precisa ter ao menos 3 caracteres.")
+      .max(200, "Use no máximo 200 caracteres."),
+    description: z.string().max(5000, "Use no máximo 5000 caracteres."),
+    startingPrice: z.string().min(1, "Informe o lance inicial."),
+    minimumIncrement: z.string().min(1, "Informe o incremento mínimo."),
+    startsAt: z.string().min(1, "Informe a data de início."),
+    endsAt: z.string().min(1, "Informe a data de encerramento."),
+    status: z.enum(["DRAFT", "SCHEDULED"]),
+    productSource: z.string().min(1, "Informe a origem do produto.").max(100),
     externalProductId: z
       .string()
-      .min(1, 'Informe o identificador do produto.')
+      .min(1, "Informe o identificador do produto.")
       .max(200),
     imageUrl: z.string(),
   })
@@ -64,18 +64,18 @@ const schema = z
     const startingPrice = parseBRLInput(values.startingPrice);
     if (startingPrice === null || startingPrice <= 0) {
       ctx.addIssue({
-        code: 'custom',
-        path: ['startingPrice'],
-        message: 'Informe um valor positivo, como 1.250,00.',
+        code: "custom",
+        path: ["startingPrice"],
+        message: "Informe um valor positivo, como 1.250,00.",
       });
     }
 
     const increment = parseBRLInput(values.minimumIncrement);
     if (increment === null || increment <= 0) {
       ctx.addIssue({
-        code: 'custom',
-        path: ['minimumIncrement'],
-        message: 'Informe um incremento positivo.',
+        code: "custom",
+        path: ["minimumIncrement"],
+        message: "Informe um incremento positivo.",
       });
     }
 
@@ -83,23 +83,23 @@ const schema = z
     const end = zonedInputToIso(values.endsAt);
     if (!start) {
       ctx.addIssue({
-        code: 'custom',
-        path: ['startsAt'],
-        message: 'Data de início inválida.',
+        code: "custom",
+        path: ["startsAt"],
+        message: "Data de início inválida.",
       });
     }
     if (!end) {
       ctx.addIssue({
-        code: 'custom',
-        path: ['endsAt'],
-        message: 'Data de encerramento inválida.',
+        code: "custom",
+        path: ["endsAt"],
+        message: "Data de encerramento inválida.",
       });
     }
     if (start && end && new Date(end) <= new Date(start)) {
       ctx.addIssue({
-        code: 'custom',
-        path: ['endsAt'],
-        message: 'O encerramento precisa ser posterior ao início.',
+        code: "custom",
+        path: ["endsAt"],
+        message: "O encerramento precisa ser posterior ao início.",
       });
     }
 
@@ -108,9 +108,9 @@ const schema = z
         new URL(values.imageUrl);
       } catch {
         ctx.addIssue({
-          code: 'custom',
-          path: ['imageUrl'],
-          message: 'Informe uma URL de imagem válida.',
+          code: "custom",
+          path: ["imageUrl"],
+          message: "Informe uma URL de imagem válida.",
         });
       }
     }
@@ -120,7 +120,7 @@ type BatchForm = z.infer<typeof schema>;
 
 function snapshotFromCard(card: CatalogCard) {
   return {
-    source: 'CARDEX',
+    source: "CARDEX",
     externalId: card.id,
     setId: card.setId,
     setName: card.setName,
@@ -135,13 +135,13 @@ function snapshotFromCard(card: CatalogCard) {
 }
 
 export function NewBatchPage() {
-  useDocumentTitle('Novo lote');
+  useDocumentTitle("Novo lote");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { push } = useToast();
 
-  const [mode, setMode] = useState<'catalog' | 'manual'>('catalog');
-  const [search, setSearch] = useState('');
+  const [mode, setMode] = useState<"catalog" | "manual">("catalog");
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [selectedCard, setSelectedCard] = useState<CatalogCard | null>(null);
   const [formError, setFormError] = useState<ErrorPresentation | null>(null);
@@ -165,23 +165,23 @@ export function NewBatchPage() {
   } = useForm<BatchForm>({
     resolver: zodResolver(schema),
     defaultValues: {
-      title: '',
-      description: '',
-      startingPrice: '',
-      minimumIncrement: '',
+      title: "",
+      description: "",
+      startingPrice: "",
+      minimumIncrement: "",
       startsAt: defaults.startsAt,
       endsAt: defaults.endsAt,
-      status: 'DRAFT',
-      productSource: 'CARDEX',
-      externalProductId: '',
-      imageUrl: '',
+      status: "DRAFT",
+      productSource: "CARDEX",
+      externalProductId: "",
+      imageUrl: "",
     },
   });
 
   const catalogQuery = useQuery({
     queryKey: queryKeys.catalog.search(debouncedSearch, page),
     queryFn: () => catalogService.search(debouncedSearch, page, 8),
-    enabled: mode === 'catalog',
+    enabled: mode === "catalog",
     staleTime: 60_000,
   });
 
@@ -191,14 +191,14 @@ export function NewBatchPage() {
 
   const selectCard = (card: CatalogCard) => {
     setSelectedCard(card);
-    setValue('externalProductId', card.id, { shouldValidate: true });
-    setValue('productSource', 'CARDEX', { shouldValidate: true });
+    setValue("externalProductId", card.id, { shouldValidate: true });
+    setValue("productSource", "CARDEX", { shouldValidate: true });
     setValue(
-      'title',
-      `${card.name}${card.setName ? ` · ${card.setName}` : ''}`,
+      "title",
+      `${card.name}${card.setName ? ` · ${card.setName}` : ""}`,
       { shouldValidate: true },
     );
-    setValue('imageUrl', card.imageLarge ?? card.imageSmall ?? '', {
+    setValue("imageUrl", card.imageLarge ?? card.imageSmall ?? "", {
       shouldValidate: true,
     });
     setFormError(null);
@@ -218,9 +218,9 @@ export function NewBatchPage() {
       !endsAt
     ) {
       setFormError({
-        title: 'Revise os campos',
-        message: 'Verifique valores e datas antes de continuar.',
-        tone: 'warning',
+        title: "Revise os campos",
+        message: "Verifique valores e datas antes de continuar.",
+        tone: "warning",
       });
       return;
     }
@@ -244,12 +244,12 @@ export function NewBatchPage() {
     try {
       const batch = await batchsService.create(payload);
       push({
-        title: values.status === 'DRAFT' ? 'Rascunho salvo' : 'Lote agendado',
+        title: values.status === "DRAFT" ? "Rascunho salvo" : "Lote agendado",
         description:
-          values.status === 'DRAFT'
-            ? 'Revise os dados e publique quando estiver pronto.'
-            : 'O lote foi registrado pelo servidor e aguarda o horário de abertura.',
-        tone: 'success',
+          values.status === "DRAFT"
+            ? "Revise os dados e publique quando estiver pronto."
+            : "O lote foi registrado pelo servidor e aguarda o horário de abertura.",
+        tone: "success",
       });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.batchs.all }),
@@ -258,15 +258,15 @@ export function NewBatchPage() {
       navigate(`/painel/lotes/${batch.id}`);
     } catch (error) {
       const fields = [
-        'title',
-        'description',
-        'startingPrice',
-        'minimumIncrement',
-        'startsAt',
-        'endsAt',
-        'productSource',
-        'externalProductId',
-        'imageUrl',
+        "title",
+        "description",
+        "startingPrice",
+        "minimumIncrement",
+        "startsAt",
+        "endsAt",
+        "productSource",
+        "externalProductId",
+        "imageUrl",
       ] as const;
       fields.forEach((field) => {
         const message = fieldErrorFor(error, field);
@@ -301,7 +301,11 @@ export function NewBatchPage() {
       />
 
       {formError && (
-        <InlineAlert tone={formError.tone} title={formError.title} className="mt-6">
+        <InlineAlert
+          tone={formError.tone}
+          title={formError.title}
+          className="mt-6"
+        >
           {formError.message}
         </InlineAlert>
       )}
@@ -311,41 +315,44 @@ export function NewBatchPage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="eyebrow">Passo 01</p>
-              <h2 id="catalogo-title" className="mt-1.5 font-display text-2xl text-chalk">
+              <h2
+                id="catalogo-title"
+                className="mt-1.5 font-display text-2xl text-chalk"
+              >
                 Item do lote
               </h2>
             </div>
             <div className="flex rounded-lg border border-line bg-ink/50 p-0.5">
               <button
                 type="button"
-                onClick={() => setMode('catalog')}
+                onClick={() => setMode("catalog")}
                 className={cn(
-                  'rounded-md px-2.5 py-1.5 text-[0.6875rem] font-medium transition-colors',
-                  mode === 'catalog'
-                    ? 'bg-raised text-chalk'
-                    : 'text-mist-dim hover:text-mist',
+                  "rounded-md px-2.5 py-1.5 text-[0.6875rem] font-medium transition-colors",
+                  mode === "catalog"
+                    ? "bg-raised text-chalk"
+                    : "text-mist-dim hover:text-mist",
                 )}
-                aria-pressed={mode === 'catalog'}
+                aria-pressed={mode === "catalog"}
               >
                 Catálogo
               </button>
               <button
                 type="button"
-                onClick={() => setMode('manual')}
+                onClick={() => setMode("manual")}
                 className={cn(
-                  'rounded-md px-2.5 py-1.5 text-[0.6875rem] font-medium transition-colors',
-                  mode === 'manual'
-                    ? 'bg-raised text-chalk'
-                    : 'text-mist-dim hover:text-mist',
+                  "rounded-md px-2.5 py-1.5 text-[0.6875rem] font-medium transition-colors",
+                  mode === "manual"
+                    ? "bg-raised text-chalk"
+                    : "text-mist-dim hover:text-mist",
                 )}
-                aria-pressed={mode === 'manual'}
+                aria-pressed={mode === "manual"}
               >
                 Manual
               </button>
             </div>
           </div>
 
-          {mode === 'catalog' ? (
+          {mode === "catalog" ? (
             <div className="mt-5">
               <div className="relative">
                 <Search
@@ -368,24 +375,32 @@ export function NewBatchPage() {
                     tone="warning"
                     title="Busca de cartas indisponível"
                   >
-                    O backend ainda não expõe o proxy de catálogo
-                    (<code className="font-mono text-[0.6875rem]">GET /catalog/cards</code>).
-                    Você pode cadastrar o item manualmente ao lado.
+                    O backend ainda não expõe o proxy de catálogo (
+                    <code className="font-mono text-[0.6875rem]">
+                      GET /catalog/cards
+                    </code>
+                    ). Você pode cadastrar o item manualmente ao lado.
                   </InlineAlert>
                   <div className="mt-3 flex gap-2">
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => setMode('manual')}
-                      leftIcon={<Package aria-hidden="true" className="size-3.5" />}
+                      className="cursor-pointer"
+                      onClick={() => setMode("manual")}
+                      leftIcon={
+                        <Package aria-hidden="true" className="size-3.5" />
+                      }
                     >
                       Preencher manualmente
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="cursor-pointer"
                       onClick={() => void catalogQuery.refetch()}
-                      leftIcon={<RefreshCw aria-hidden="true" className="size-3.5" />}
+                      leftIcon={
+                        <RefreshCw aria-hidden="true" className="size-3.5" />
+                      }
                     >
                       Tentar de novo
                     </Button>
@@ -415,10 +430,10 @@ export function NewBatchPage() {
                           type="button"
                           onClick={() => selectCard(card)}
                           className={cn(
-                            'group relative flex gap-3 rounded-xl border p-2.5 text-left transition-colors',
+                            "group relative flex gap-3 cursor-pointer rounded-xl border p-2.5 text-left transition-colors",
                             selected
-                              ? 'border-gold/60 bg-gold/[0.07]'
-                              : 'border-line bg-raised/30 hover:border-line-strong',
+                              ? "border-gold/60 bg-gold/[0.07]"
+                              : "border-line bg-raised/30 hover:border-line-strong",
                           )}
                           aria-pressed={selected}
                         >
@@ -435,7 +450,7 @@ export function NewBatchPage() {
                               {card.name}
                             </span>
                             <span className="mt-0.5 block truncate text-[0.625rem] text-mist-dim">
-                              {card.rarity ?? card.supertype ?? 'Carta'}
+                              {card.rarity ?? card.supertype ?? "Carta"}
                             </span>
                           </span>
                           {selected && (
@@ -455,14 +470,18 @@ export function NewBatchPage() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="cursor-pointer"
                         disabled={page <= 1}
-                        onClick={() => setPage((value) => Math.max(1, value - 1))}
+                        onClick={() =>
+                          setPage((value) => Math.max(1, value - 1))
+                        }
                       >
                         Anterior
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="cursor-pointer"
                         disabled={page >= catalogQuery.data.totalPages}
                         onClick={() => setPage((value) => value + 1)}
                       >
@@ -482,7 +501,8 @@ export function NewBatchPage() {
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => setMode('manual')}
+                        className="cursor-pointer"
+                        onClick={() => setMode("manual")}
                       >
                         Cadastrar manualmente
                       </Button>
@@ -507,7 +527,7 @@ export function NewBatchPage() {
                 <Input
                   id="batch-source"
                   invalid={Boolean(errors.productSource)}
-                  {...register('productSource')}
+                  {...register("productSource")}
                 />
               </FieldWrapper>
               <FieldWrapper
@@ -520,13 +540,13 @@ export function NewBatchPage() {
                   id="batch-external-id"
                   placeholder="Código do item no catálogo"
                   invalid={Boolean(errors.externalProductId)}
-                  {...register('externalProductId')}
+                  {...register("externalProductId")}
                 />
               </FieldWrapper>
             </div>
           )}
 
-          {selectedCard && mode === 'catalog' && (
+          {selectedCard && mode === "catalog" && (
             <div className="surface-soft mt-4 flex items-center gap-3 p-3">
               <CardImage
                 src={selectedCard.imageSmall ?? selectedCard.imageLarge}
@@ -544,15 +564,21 @@ export function NewBatchPage() {
                   {selectedCard.setName} · #{selectedCard.number}
                 </p>
               </div>
-              <Sparkles aria-hidden="true" className="size-4 shrink-0 text-gold" />
+              <Sparkles
+                aria-hidden="true"
+                className="size-4 shrink-0 text-gold"
+              />
             </div>
           )}
 
-          {mode === 'catalog' && !selectedCard && (
+          {mode === "catalog" && !selectedCard && (
             <div className="mt-4 flex items-start gap-2 text-[0.6875rem] leading-relaxed text-mist-dim">
-              <AlertTriangle aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-gold" />
-              Selecione uma carta para preencher automaticamente título, imagem e
-              identificador. Os campos continuam editáveis.
+              <AlertTriangle
+                aria-hidden="true"
+                className="mt-0.5 size-3.5 shrink-0 text-gold"
+              />
+              Selecione uma carta para preencher automaticamente título, imagem
+              e identificador. Os campos continuam editáveis.
             </div>
           )}
         </section>
@@ -561,17 +587,24 @@ export function NewBatchPage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="eyebrow">Passo 02</p>
-              <h2 id="detalhes-title" className="mt-1.5 font-display text-2xl text-chalk">
+              <h2
+                id="detalhes-title"
+                className="mt-1.5 font-display text-2xl text-chalk"
+              >
                 Regras do leilão
               </h2>
             </div>
             <span className="inline-flex items-center gap-1.5 font-mono text-[0.5625rem] tracking-[0.12em] text-mist-dim uppercase">
               <ImageIcon aria-hidden="true" className="size-3" />
-              {selectedCard ? 'Item do catálogo' : 'Preenchimento livre'}
+              {selectedCard ? "Item do catálogo" : "Preenchimento livre"}
             </span>
           </div>
 
-          <form onSubmit={onSubmit} noValidate className="surface mt-5 space-y-4 p-5">
+          <form
+            onSubmit={onSubmit}
+            noValidate
+            className="surface mt-5 space-y-4 p-5"
+          >
             <FieldWrapper
               label="Título do lote"
               htmlFor="batch-title"
@@ -582,7 +615,7 @@ export function NewBatchPage() {
                 id="batch-title"
                 placeholder="Ex.: Charizard · Base Set"
                 invalid={Boolean(errors.title)}
-                {...register('title')}
+                {...register("title")}
               />
             </FieldWrapper>
 
@@ -596,15 +629,15 @@ export function NewBatchPage() {
                 id="batch-description"
                 placeholder="Detalhes do item, conservação e observações"
                 invalid={Boolean(errors.description)}
-                {...register('description')}
+                {...register("description")}
               />
             </FieldWrapper>
 
-            {mode === 'catalog' && (
-              <input type="hidden" {...register('productSource')} />
+            {mode === "catalog" && (
+              <input type="hidden" {...register("productSource")} />
             )}
-            {mode === 'catalog' && (
-              <input type="hidden" {...register('externalProductId')} />
+            {mode === "catalog" && (
+              <input type="hidden" {...register("externalProductId")} />
             )}
 
             <FieldWrapper
@@ -618,7 +651,7 @@ export function NewBatchPage() {
                 type="url"
                 placeholder="https://..."
                 invalid={Boolean(errors.imageUrl)}
-                {...register('imageUrl')}
+                {...register("imageUrl")}
               />
             </FieldWrapper>
 
@@ -635,7 +668,7 @@ export function NewBatchPage() {
                   placeholder="4.500,00"
                   className="numeric"
                   invalid={Boolean(errors.startingPrice)}
-                  {...register('startingPrice')}
+                  {...register("startingPrice")}
                 />
               </FieldWrapper>
               <FieldWrapper
@@ -650,7 +683,7 @@ export function NewBatchPage() {
                   placeholder="250,00"
                   className="numeric"
                   invalid={Boolean(errors.minimumIncrement)}
-                  {...register('minimumIncrement')}
+                  {...register("minimumIncrement")}
                 />
               </FieldWrapper>
             </div>
@@ -668,7 +701,7 @@ export function NewBatchPage() {
                   type="datetime-local"
                   className="numeric text-[0.8125rem]"
                   invalid={Boolean(errors.startsAt)}
-                  {...register('startsAt')}
+                  {...register("startsAt")}
                 />
               </FieldWrapper>
               <FieldWrapper
@@ -683,7 +716,7 @@ export function NewBatchPage() {
                   type="datetime-local"
                   className="numeric text-[0.8125rem]"
                   invalid={Boolean(errors.endsAt)}
-                  {...register('endsAt')}
+                  {...register("endsAt")}
                 />
               </FieldWrapper>
             </div>
@@ -693,28 +726,35 @@ export function NewBatchPage() {
               htmlFor="batch-status"
               hint="Rascunho não aparece na vitrine. Agendado entra na fila do servidor."
             >
-              <Select id="batch-status" {...register('status')}>
+              <Select id="batch-status" {...register("status")}>
                 <option value="DRAFT">Rascunho</option>
                 <option value="SCHEDULED">Agendado</option>
               </Select>
             </FieldWrapper>
 
             <div className="flex flex-col gap-2 border-t border-line/70 pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="max-w-xs text-[0.6875rem] leading-relaxed text-mist-dim">
-                {watch('status') === 'DRAFT'
-                  ? 'O lote fica privado até você publicá-lo no painel.'
-                  : 'O lote será publicado e ativado quando a data de início chegar.'}
+              <p className="max-w-xs text-xs leading-relaxed text-mist-dim">
+                {watch("status") === "DRAFT"
+                  ? "Fica privado até você publicá-lo no painel."
+                  : "Será publicado e ativado na data de início definida."}
               </p>
-              <div className="flex gap-2">
-                <Link to="/painel" className={buttonStyles('ghost', 'md')}>
+              <div className="flex gap-1">
+                <Link to="/painel" className={buttonStyles("ghost", "md")}>
                   Cancelar
                 </Link>
                 <Button
                   type="submit"
                   loading={isSubmitting}
-                  rightIcon={<ArrowRight aria-hidden="true" className="size-4" />}
+                  className="cursor-pointer"
+                  disabled={isSubmitting}
+                  size="md"
+                  rightIcon={
+                    <ArrowRight aria-hidden="true" className="size-4" />
+                  }
                 >
-                  {watch('status') === 'DRAFT' ? 'Salvar rascunho' : 'Agendar lote'}
+                  {watch("status") === "DRAFT"
+                    ? "Salvar rascunho"
+                    : "Agendar lote"}
                 </Button>
               </div>
             </div>

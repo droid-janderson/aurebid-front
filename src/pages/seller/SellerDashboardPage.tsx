@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   Gavel,
@@ -9,41 +9,41 @@ import {
   Plus,
   RefreshCw,
   Search,
-} from 'lucide-react';
-import type { BatchListFilters, BatchStatus } from '@/types/domain';
-import { batchsService } from '@/services/batchs.service';
-import { queryKeys } from '@/services/query-keys';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { BatchStatusBadge } from '@/components/ui/Badge';
-import { Button, buttonStyles } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Field';
-import { TableSkeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/feedback/EmptyState';
-import { ErrorState } from '@/components/feedback/ErrorState';
-import { Pagination } from '@/components/batchs/Pagination';
-import { formatBRL } from '@/utils/money';
-import { formatDateTime } from '@/utils/datetime';
-import { presentError } from '@/utils/errors';
-import { cardSummaryLine, primaryCardImage } from '@/utils/product';
-import { CardImage } from '@/components/cards/CardImage';
-import { publicBatchCode } from '@/utils/pseudonym';
-import { cn } from '@/utils/cn';
+} from "lucide-react";
+import type { BatchListFilters, BatchStatus } from "@/types/domain";
+import { batchsService } from "@/services/batchs.service";
+import { queryKeys } from "@/services/query-keys";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { BatchStatusBadge } from "@/components/ui/Badge";
+import { Button, buttonStyles } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Field";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/feedback/EmptyState";
+import { ErrorState } from "@/components/feedback/ErrorState";
+import { Pagination } from "@/components/batchs/Pagination";
+import { formatBRL } from "@/utils/money";
+import { formatDateTime } from "@/utils/datetime";
+import { presentError } from "@/utils/errors";
+import { cardSummaryLine, primaryCardImage } from "@/utils/product";
+import { CardImage } from "@/components/cards/CardImage";
+import { publicBatchCode } from "@/utils/pseudonym";
+import { cn } from "@/utils/cn";
 
-const statusTabs: Array<{ value: BatchStatus | ''; label: string }> = [
-  { value: '', label: 'Todos' },
-  { value: 'ACTIVE', label: 'Ao vivo' },
-  { value: 'SCHEDULED', label: 'Agendados' },
-  { value: 'DRAFT', label: 'Rascunhos' },
-  { value: 'ENDED', label: 'Encerrados' },
-  { value: 'SETTLED', label: 'Liquidados' },
-  { value: 'CANCELLED', label: 'Cancelados' },
+const statusTabs: Array<{ value: BatchStatus | ""; label: string }> = [
+  { value: "", label: "Todos" },
+  { value: "ACTIVE", label: "Ao vivo" },
+  { value: "SCHEDULED", label: "Agendados" },
+  { value: "DRAFT", label: "Rascunhos" },
+  { value: "ENDED", label: "Encerrados" },
+  { value: "SETTLED", label: "Liquidados" },
+  { value: "CANCELLED", label: "Cancelados" },
 ];
 
 export function SellerDashboardPage() {
-  useDocumentTitle('Painel do leiloeiro');
-  const [status, setStatus] = useState<BatchStatus | ''>('');
-  const [search, setSearch] = useState('');
+  useDocumentTitle("Painel do leiloeiro");
+  const [status, setStatus] = useState<BatchStatus | "">("");
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
   const filters = useMemo<BatchListFilters>(
@@ -52,8 +52,8 @@ export function SellerDashboardPage() {
       limit: 12,
       status: status || undefined,
       search: search.trim() || undefined,
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
+      sortBy: "createdAt",
+      sortOrder: "desc",
     }),
     [page, status, search],
   );
@@ -77,7 +77,10 @@ export function SellerDashboardPage() {
         }
         description="Publique cartas do catálogo, acompanhe a disputa e encerre leilões. O servidor valida prazos, lances e liquidação."
         actions={
-          <Link to="/painel/lotes/novo" className={buttonStyles('primary', 'md')}>
+          <Link
+            to="/painel/lotes/novo"
+            className={buttonStyles("primary", "md")}
+          >
             <Plus aria-hidden="true" className="size-4" />
             Novo lote
           </Link>
@@ -89,17 +92,17 @@ export function SellerDashboardPage() {
           <div className="scroll-thin flex gap-1 overflow-x-auto border-b border-line/70 pb-px">
             {statusTabs.map((tab) => (
               <button
-                key={tab.value || 'all'}
+                key={tab.value || "all"}
                 type="button"
                 onClick={() => {
                   setStatus(tab.value);
                   setPage(1);
                 }}
                 className={cn(
-                  'shrink-0 border-b-2 px-3 py-2.5 text-[0.8125rem] font-medium transition-colors',
+                  "shrink-0 border-b-2 px-3 py-2.5 text-[0.8125rem] font-medium transition-colors cursor-pointer",
                   status === tab.value
-                    ? 'border-gold text-gold'
-                    : 'border-transparent text-mist hover:text-chalk',
+                    ? "border-gold text-gold"
+                    : "border-transparent text-mist hover:text-chalk",
                 )}
                 aria-pressed={status === tab.value}
               >
@@ -139,7 +142,10 @@ export function SellerDashboardPage() {
           ) : lotsQuery.data && lotsQuery.data.data.length > 0 ? (
             <ul className="space-y-2">
               {lotsQuery.data.data.map((batch) => {
-                const editable = batch.status === 'DRAFT' || batch.status === 'SCHEDULED';
+                const editable =
+                  batch.status === "DRAFT" || batch.status === "SCHEDULED";
+                const canManage =
+                  editable || batch.status === "CANCELLED";
                 return (
                   <li
                     key={batch.id}
@@ -156,7 +162,7 @@ export function SellerDashboardPage() {
                       />
                       <div className="min-w-0">
                         <p className="truncate font-mono text-[0.5625rem] tracking-[0.12em] text-gold/80 uppercase">
-                          {cardSummaryLine(batch) || batch.productSource} ·{' '}
+                          {cardSummaryLine(batch) || batch.productSource} ·{" "}
                           {publicBatchCode(batch.id)}
                         </p>
                         <p className="mt-0.5 truncate text-sm font-medium text-chalk">
@@ -165,11 +171,14 @@ export function SellerDashboardPage() {
                         <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.6875rem] text-mist-dim">
                           <span>{formatBRL(batch.currentPrice)}</span>
                           <span>
-                            {batch.bidCount} {batch.bidCount === 1 ? 'lance' : 'lances'}
+                            {batch.bidCount}{" "}
+                            {batch.bidCount === 1 ? "lance" : "lances"}
                           </span>
                           <span className="hidden sm:inline">
-                            {editable ? 'Início' : 'Encerra'}{' '}
-                            {formatDateTime(editable ? batch.startsAt : batch.endsAt)}
+                            {editable ? "Início" : "Encerra"}{" "}
+                            {formatDateTime(
+                              editable ? batch.startsAt : batch.endsAt,
+                            )}
                           </span>
                         </p>
                       </div>
@@ -177,19 +186,22 @@ export function SellerDashboardPage() {
 
                     <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-end">
                       <BatchStatusBadge status={batch.status} />
-                      {editable && (
+                      {canManage && (
                         <Link
                           to={`/painel/lotes/${batch.id}`}
-                          className={buttonStyles('secondary', 'sm')}
+                          className={buttonStyles("secondary", "sm")}
                         >
-                          <LayoutDashboard aria-hidden="true" className="size-3.5" />
+                          <LayoutDashboard
+                            aria-hidden="true"
+                            className="size-3.5"
+                          />
                           Gerenciar
                         </Link>
                       )}
-                      {!editable && (
+                      {!canManage && (
                         <Link
                           to={`/lotes/${batch.id}`}
-                          className={buttonStyles('ghost', 'sm')}
+                          className={buttonStyles("ghost", "sm")}
                         >
                           Ver lote
                           <ArrowRight aria-hidden="true" className="size-3.5" />
@@ -205,30 +217,36 @@ export function SellerDashboardPage() {
               icon={status ? Search : Landmark}
               title={
                 status || search
-                  ? 'Nenhum lote com estes critérios'
-                  : 'Sua casa ainda não tem lotes'
+                  ? "Nenhum lote com estes critérios"
+                  : "Sua casa ainda não tem lotes"
               }
               description={
                 status || search
-                  ? 'Ajuste a busca ou selecione outra situação para encontrar seus lotes.'
-                  : 'Cadastre a primeira carta, defina preço inicial e incremento e publique quando estiver pronto.'
+                  ? "Ajuste a busca ou selecione outra situação para encontrar seus lotes."
+                  : "Cadastre a primeira carta, defina preço inicial e incremento e publique quando estiver pronto."
               }
               action={
                 status || search ? (
                   <Button
                     variant="secondary"
                     size="sm"
+                    className="cursor-pointer"
                     onClick={() => {
-                      setStatus('');
-                      setSearch('');
+                      setStatus("");
+                      setSearch("");
                       setPage(1);
                     }}
-                    leftIcon={<RefreshCw aria-hidden="true" className="size-3.5" />}
+                    leftIcon={
+                      <RefreshCw aria-hidden="true" className="size-3.5" />
+                    }
                   >
                     Limpar filtros
                   </Button>
                 ) : (
-                  <Link to="/painel/lotes/novo" className={buttonStyles('primary', 'sm')}>
+                  <Link
+                    to="/painel/lotes/novo"
+                    className={buttonStyles("primary", "sm")}
+                  >
                     <Plus aria-hidden="true" className="size-4" />
                     Criar primeiro lote
                   </Link>

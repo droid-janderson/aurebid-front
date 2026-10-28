@@ -1,48 +1,32 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowRight,
-  Clock,
-  HandCoins,
-  Receipt,
-  RefreshCw,
-  ShoppingBag,
-  Store,
-} from 'lucide-react';
-import type { Settlement, SettlementStatus } from '@/types/domain';
-import { settlementsService } from '@/services/settlements.service';
-import { queryKeys } from '@/services/query-keys';
-import { useAuth } from '@/contexts/AuthContext';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { useToast } from '@/components/ui/Toast';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { SettlementStatusBadge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { EmptyState } from '@/components/feedback/EmptyState';
-import { ErrorState } from '@/components/feedback/ErrorState';
-import { InlineAlert } from '@/components/feedback/InlineAlert';
-import { TableSkeleton } from '@/components/ui/Skeleton';
-import { CardImage } from '@/components/cards/CardImage';
-import { formatBRL } from '@/utils/money';
-import { formatDateTime } from '@/utils/datetime';
-import { presentError } from '@/utils/errors';
-import { cn } from '@/utils/cn';
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowRight, Clock, Receipt, RefreshCw } from "lucide-react";
+import type { Settlement, SettlementStatus } from "@/types/domain";
+import { settlementsService } from "@/services/settlements.service";
+import { queryKeys } from "@/services/query-keys";
+import { useAuth } from "@/contexts/AuthContext";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useToast } from "@/components/ui/Toast";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SettlementStatusBadge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/feedback/EmptyState";
+import { ErrorState } from "@/components/feedback/ErrorState";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import { CardImage } from "@/components/cards/CardImage";
+import { formatBRL } from "@/utils/money";
+import { formatDateTime } from "@/utils/datetime";
+import { presentError } from "@/utils/errors";
+import { cn } from "@/utils/cn";
 
-type RoleFilter = 'all' | 'buyer' | 'seller';
-
-const roleTabs: Array<{ value: RoleFilter; label: string }> = [
-  { value: 'all', label: 'Todos' },
-  { value: 'buyer', label: 'Comprei' },
-  { value: 'seller', label: 'Vendi' },
-];
-
-const statusFilters: Array<{ value: SettlementStatus | ''; label: string }> = [
-  { value: '', label: 'Todas as situações' },
-  { value: 'PENDING', label: 'Aguardando' },
-  { value: 'PROCESSING', label: 'Em processamento' },
-  { value: 'COMPLETED', label: 'Concluídas' },
-  { value: 'FAILED', label: 'Falhas' },
+const statusFilters: Array<{ value: SettlementStatus | ""; label: string }> = [
+  { value: "", label: "Todas as situações" },
+  { value: "PENDING", label: "Aguardando" },
+  { value: "PROCESSING", label: "Em processamento" },
+  { value: "COMPLETED", label: "Concluídas" },
+  { value: "FAILED", label: "Falhas" },
 ];
 
 function SettlementItem({
@@ -57,8 +41,7 @@ function SettlementItem({
   onProcess: (settlement: Settlement) => void;
 }) {
   const isBuyer = settlement.buyerId === userId;
-  const isSeller = settlement.sellerId === userId;
-  const canProcess = settlement.status === 'PENDING' && (isBuyer || isSeller);
+  const canProcess = settlement.status === "PENDING" && isBuyer;
 
   return (
     <li className="surface-soft p-3">
@@ -69,7 +52,7 @@ function SettlementItem({
         >
           <CardImage
             src={settlement.batch?.imageUrl}
-            alt={`Carta ${settlement.batch?.title ?? 'arrematada'}`}
+            alt={`Carta ${settlement.batch?.title ?? "arrematada"}`}
             className="h-20 w-16 shrink-0 rounded-lg"
           />
           <div className="min-w-0">
@@ -77,30 +60,23 @@ function SettlementItem({
               {settlement.receiptNumber}
               <span
                 className={cn(
-                  'rounded-full border px-1.5 py-0.5 text-[0.5rem] tracking-[0.1em]',
+                  "rounded-full border px-1.5 py-0.5 text-[0.5rem] tracking-[0.1em]",
                   isBuyer
-                    ? 'border-info/30 text-info'
-                    : isSeller
-                      ? 'border-win/30 text-win'
-                      : 'border-line text-mist-dim',
+                    ? "border-info/30 text-info"
+                    : "border-line text-mist-dim",
                 )}
               >
-                {isBuyer ? 'Compra' : isSeller ? 'Venda' : 'Participação'}
+                {isBuyer ? "Compra" : "Participação"}
               </span>
             </p>
             <p className="mt-0.5 truncate text-sm font-medium text-chalk">
-              {settlement.batch?.title ?? 'Lote'}
+              {settlement.batch?.title ?? "Lote"}
             </p>
             <p className="mt-1 text-[0.6875rem] text-mist-dim">
+              {isBuyer ? "Vendedor" : "Contraparte"}:{" "}
               {isBuyer
-                ? 'Vendedor'
-                : isSeller
-                  ? 'Comprador'
-                  : 'Contraparte'}
-              :{' '}
-              {isBuyer
-                ? settlement.seller?.name ?? 'participante'
-                : settlement.buyer?.name ?? 'participante'}{' '}
+                ? (settlement.seller?.name ?? "participante")
+                : (settlement.buyer?.name ?? "participante")}{" "}
               · {formatDateTime(settlement.completedAt ?? settlement.createdAt)}
             </p>
           </div>
@@ -118,25 +94,28 @@ function SettlementItem({
             <Button
               variant="secondary"
               size="sm"
+              className="cursor-pointer"
               loading={processing}
               onClick={() => onProcess(settlement)}
             >
               Processar
             </Button>
           )}
-          {settlement.status === 'PENDING' && !canProcess && (
+          {settlement.status === "PENDING" && !canProcess && (
             <span className="inline-flex items-center gap-1 text-[0.625rem] text-mist-dim">
               <Clock aria-hidden="true" className="size-3" />
               Aguardando
             </span>
           )}
-          <Link
-            to={`/recibo/${settlement.publicToken}`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-[0.6875rem] font-medium text-mist transition-colors hover:border-gold/40 hover:text-gold"
-          >
-            <Receipt aria-hidden="true" className="size-3" />
-            Recibo
-          </Link>
+          {settlement.publicToken && (
+            <Link
+              to={`/recibo/${settlement.publicToken}`}
+              className="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-[0.6875rem] font-medium text-mist transition-colors hover:border-gold/40 hover:text-gold"
+            >
+              <Receipt aria-hidden="true" className="size-3" />
+              Recibo
+            </Link>
+          )}
         </div>
       </div>
     </li>
@@ -144,12 +123,11 @@ function SettlementItem({
 }
 
 export function MySettlementsPage() {
-  useDocumentTitle('Meus arremates');
+  useDocumentTitle("Meus arremates");
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { push } = useToast();
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
-  const [statusFilter, setStatusFilter] = useState<SettlementStatus | ''>('');
+  const [statusFilter, setStatusFilter] = useState<SettlementStatus | "">("");
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const query = useQuery({
@@ -161,22 +139,20 @@ export function MySettlementsPage() {
   const settlements = useMemo(() => {
     const all = query.data?.data ?? [];
     return all.filter((settlement) => {
-      if (roleFilter === 'buyer' && settlement.buyerId !== user?.id) return false;
-      if (roleFilter === 'seller' && settlement.sellerId !== user?.id) return false;
       if (statusFilter && settlement.status !== statusFilter) return false;
       return true;
     });
-  }, [query.data, roleFilter, statusFilter, user?.id]);
+  }, [query.data, statusFilter, user?.id]);
 
   const process = async (settlement: Settlement) => {
     setProcessingId(settlement.id);
     try {
       await settlementsService.process(settlement.id);
       push({
-        title: 'Processamento solicitado',
+        title: "Processamento solicitado",
         description:
-          'O servidor iniciou a liquidação. O status será atualizado conforme a confirmação.',
-        tone: 'info',
+          "O servidor iniciou a liquidação. O status será atualizado conforme a confirmação.",
+        tone: "info",
       });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.settlements.mine }),
@@ -208,16 +184,10 @@ export function MySettlementsPage() {
         description="Compras e vendas liquidadas, com recibo público e status atualizado pelo servidor. Nenhum valor é confirmado apenas neste navegador."
         actions={
           <>
-            <Link
-              to="/painel/resultados"
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line-strong/70 px-3.5 text-[0.8125rem] font-medium text-mist transition-colors hover:text-chalk"
-            >
-              <HandCoins aria-hidden="true" className="size-3.5" />
-              Resultados de venda
-            </Link>
             <Button
               variant="secondary"
               size="sm"
+              className="cursor-pointer"
               onClick={() => void query.refetch()}
               loading={query.isFetching}
               leftIcon={<RefreshCw aria-hidden="true" className="size-3.5" />}
@@ -229,45 +199,17 @@ export function MySettlementsPage() {
       />
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex rounded-lg border border-line bg-ink/40 p-0.5">
-          {roleTabs.map((tab) => {
-            const Icon =
-              tab.value === 'buyer'
-                ? ShoppingBag
-                : tab.value === 'seller'
-                  ? Store
-                  : Receipt;
-            return (
-              <button
-                key={tab.value}
-                type="button"
-                onClick={() => setRoleFilter(tab.value)}
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[0.75rem] font-medium transition-colors',
-                  roleFilter === tab.value
-                    ? 'bg-raised text-chalk'
-                    : 'text-mist-dim hover:text-mist',
-                )}
-                aria-pressed={roleFilter === tab.value}
-              >
-                <Icon aria-hidden="true" className="size-3.5" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
         <div className="scroll-thin flex gap-1 overflow-x-auto">
           {statusFilters.map((filter) => (
             <button
-              key={filter.value || 'all'}
+              key={filter.value || "all"}
               type="button"
               onClick={() => setStatusFilter(filter.value)}
               className={cn(
-                'shrink-0 rounded-full border px-2.5 py-1 text-[0.6875rem] transition-colors',
+                "shrink-0 rounded-full border px-2.5 py-1 text-[0.6875rem] transition-colors cursor-pointer",
                 statusFilter === filter.value
-                  ? 'border-gold/40 bg-gold/[0.08] text-gold'
-                  : 'border-line text-mist-dim hover:text-mist',
+                  ? "border-gold/40 bg-gold/[0.08] text-gold"
+                  : "border-line text-mist-dim hover:text-mist",
               )}
               aria-pressed={statusFilter === filter.value}
             >
@@ -291,13 +233,13 @@ export function MySettlementsPage() {
             icon={Receipt}
             title={
               query.data?.data.length === 0
-                ? 'Nenhum arremate por aqui'
-                : 'Nenhum resultado neste filtro'
+                ? "Nenhum arremate por aqui"
+                : "Nenhum resultado neste filtro"
             }
             description={
               query.data?.data.length === 0
-                ? 'Quando você vencer um lote ou vender uma carta, o arremate e o recibo aparecerão nesta área.'
-                : 'Troque os filtros de papel ou situação para consultar outros arremates.'
+                ? "Quando você vencer um lote, o arremate e o recibo aparecerão nesta área."
+                : "Troque os filtros de situação para consultar outros arremates."
             }
             action={
               <Link

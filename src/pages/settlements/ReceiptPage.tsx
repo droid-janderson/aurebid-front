@@ -1,5 +1,5 @@
-import { Link, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -9,29 +9,30 @@ import {
   Receipt,
   ShieldCheck,
   TriangleAlert,
-} from 'lucide-react';
-import { settlementsService } from '@/services/settlements.service';
-import { queryKeys } from '@/services/query-keys';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { BrandMark } from '@/components/ui/Logo';
-import { SettlementStatusBadge } from '@/components/ui/Badge';
-import { Button, buttonStyles } from '@/components/ui/Button';
-import { ErrorState } from '@/components/feedback/ErrorState';
-import { InlineAlert } from '@/components/feedback/InlineAlert';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { CardImage } from '@/components/cards/CardImage';
-import { formatBRL } from '@/utils/money';
-import { formatDateTime } from '@/utils/datetime';
-import { presentError } from '@/utils/errors';
-import { toApiError } from '@/services/api-error';
-import { pseudonymFor, publicBatchCode } from '@/utils/pseudonym';
+} from "lucide-react";
+import { settlementsService } from "@/services/settlements.service";
+import { queryKeys } from "@/services/query-keys";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { BrandMark } from "@/components/ui/Logo";
+import { SettlementStatusBadge } from "@/components/ui/Badge";
+import { Button, buttonStyles } from "@/components/ui/Button";
+import { ShareButton } from "@/components/ui/ShareButton";
+import { ErrorState } from "@/components/feedback/ErrorState";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { CardImage } from "@/components/cards/CardImage";
+import { formatBRL } from "@/utils/money";
+import { formatDateTime } from "@/utils/datetime";
+import { presentError } from "@/utils/errors";
+import { toApiError } from "@/services/api-error";
+import { publicBatchCode } from "@/utils/pseudonym";
 
 export function ReceiptPage() {
   const { token } = useParams<{ token: string }>();
-  useDocumentTitle('Recibo de arremate');
+  useDocumentTitle("Recibo de arremate");
 
   const query = useQuery({
-    queryKey: queryKeys.settlements.byToken(token ?? ''),
+    queryKey: queryKeys.settlements.byToken(token ?? ""),
     queryFn: () => settlementsService.getPublic(token!),
     enabled: Boolean(token),
     retry: false,
@@ -40,7 +41,10 @@ export function ReceiptPage() {
   if (!token) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20">
-        <ErrorState title="Recibo não informado" message="O endereço está incompleto." />
+        <ErrorState
+          title="Recibo não informado"
+          message="O endereço está incompleto."
+        />
       </div>
     );
   }
@@ -60,14 +64,14 @@ export function ReceiptPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20">
         <ErrorState
-          title={notFound ? 'Recibo não encontrado' : error.title}
+          title={notFound ? "Recibo não encontrado" : error.title}
           message={
             notFound
-              ? 'Não existe recibo público para este código. Confira o link informado.'
+              ? "Não existe recibo público para este código. Confira o link informado."
               : error.message
           }
           action={
-            <Link to="/" className={buttonStyles('secondary', 'sm')}>
+            <Link to="/" className={buttonStyles("secondary", "sm")}>
               Voltar para a vitrine
             </Link>
           }
@@ -77,10 +81,17 @@ export function ReceiptPage() {
   }
 
   const settlement = query.data;
-  const completed = settlement.status === 'COMPLETED';
-  const failed = settlement.status === 'FAILED';
-  const buyerLabel = pseudonymFor(settlement.buyer.id, 'Comprador');
-  const sellerLabel = pseudonymFor(settlement.seller.id, 'Vendedor');
+  const completed = settlement.status === "COMPLETED";
+  const failed = settlement.status === "FAILED";
+  const buyerLabel = settlement.buyerLabel ?? "Comprador";
+  const sellerLabel = settlement.sellerLabel ?? "Vendedor";
+  const batchTitle = settlement.batchTitle ?? settlement.batch?.title ?? "Lote";
+  const batchImageUrl =
+    settlement.batchImageUrl ?? settlement.batch?.imageUrl ?? null;
+  const batchEndsAt =
+    settlement.batchEndsAt ??
+    settlement.batch?.endsAt ??
+    settlement.completedAt;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
@@ -95,11 +106,19 @@ export function ReceiptPage() {
         <Button
           variant="secondary"
           size="sm"
+          className="cursor-pointer"
           onClick={() => window.print()}
           leftIcon={<Printer aria-hidden="true" className="size-3.5" />}
         >
           Imprimir
         </Button>
+      </div>
+
+      <div className="mt-3 flex justify-end">
+        <ShareButton
+          title="Recibo de arremate · AureBid"
+          text="Confira o recibo público deste arremate."
+        />
       </div>
 
       <article className="surface relative mt-5 overflow-hidden">
@@ -134,11 +153,11 @@ export function ReceiptPage() {
             <div>
               <p className="eyebrow">Arremate</p>
               <h1 className="display mt-2 text-3xl text-chalk sm:text-4xl">
-                {settlement.batch?.title ?? 'Lote'}
+                {batchTitle}
               </h1>
               <p className="mt-1 font-mono text-[0.625rem] tracking-[0.12em] text-mist-dim uppercase">
-                Lote {publicBatchCode(settlement.batchId)} ·{' '}
-                {settlement.batch?.status ?? 'status não informado'}
+                Lote {publicBatchCode(settlement.batchId)} ·{" "}
+                {settlement.batch?.status ?? "status não informado"}
               </p>
             </div>
             <SettlementStatusBadge status={settlement.status} />
@@ -149,8 +168,8 @@ export function ReceiptPage() {
           <div>
             <div className="flex items-start gap-4">
               <CardImage
-                src={settlement.batch?.imageUrl}
-                alt={`Carta ${settlement.batch?.title ?? 'arrematada'}`}
+                src={batchImageUrl}
+                alt={`Carta ${batchTitle}`}
                 className="h-28 w-20 shrink-0 rounded-lg"
               />
               <div className="min-w-0">
@@ -162,10 +181,10 @@ export function ReceiptPage() {
                 </p>
                 <p className="mt-2 text-[0.6875rem] leading-relaxed text-mist-dim">
                   {completed
-                    ? 'Liquidação concluída pelo servidor.'
+                    ? "Liquidação concluída pelo servidor."
                     : failed
-                      ? 'A liquidação falhou. O valor não deve ser considerado recebido.'
-                      : 'Liquidação em andamento. O recibo só é definitivo após a conclusão.'}
+                      ? "A liquidação falhou. O valor não deve ser considerado recebido."
+                      : "Liquidação em andamento. O recibo só é definitivo após a conclusão."}
                 </p>
               </div>
             </div>
@@ -175,13 +194,17 @@ export function ReceiptPage() {
                 <dt className="text-[0.625rem] tracking-[0.08em] text-mist-dim uppercase">
                   Comprador
                 </dt>
-                <dd className="mt-0.5 text-[0.8125rem] text-chalk">{buyerLabel}</dd>
+                <dd className="mt-0.5 text-[0.8125rem] text-chalk">
+                  {buyerLabel}
+                </dd>
               </div>
               <div>
                 <dt className="text-[0.625rem] tracking-[0.08em] text-mist-dim uppercase">
                   Vendedor
                 </dt>
-                <dd className="mt-0.5 text-[0.8125rem] text-chalk">{sellerLabel}</dd>
+                <dd className="mt-0.5 text-[0.8125rem] text-chalk">
+                  {sellerLabel}
+                </dd>
               </div>
               <div>
                 <dt className="text-[0.625rem] tracking-[0.08em] text-mist-dim uppercase">
@@ -204,7 +227,7 @@ export function ReceiptPage() {
                   Encerramento do lote
                 </dt>
                 <dd className="numeric mt-0.5 text-[0.8125rem] text-chalk">
-                  {formatDateTime(settlement.batch?.endsAt)}
+                  {formatDateTime(batchEndsAt)}
                 </dd>
               </div>
               <div>
@@ -214,7 +237,7 @@ export function ReceiptPage() {
                 <dd className="numeric mt-0.5 text-[0.8125rem] text-chalk">
                   {settlement.winningBid
                     ? formatBRL(settlement.winningBid.amount)
-                    : '—'}
+                    : "—"}
                 </dd>
               </div>
             </dl>
@@ -250,15 +273,18 @@ export function ReceiptPage() {
                   Documento em andamento
                 </p>
                 <p className="mt-1.5 text-[0.625rem] leading-relaxed text-mist">
-                  Consulte novamente após o processamento. A AureBid não antecipa
-                  a confirmação.
+                  Consulte novamente após o processamento. A AureBid não
+                  antecipa a confirmação.
                 </p>
               </div>
             )}
 
             <div className="rounded-xl border border-line bg-ink/40 p-3.5">
               <p className="flex items-center gap-1.5 text-[0.6875rem] font-medium text-mist">
-                <ShieldCheck aria-hidden="true" className="size-3.5 text-gold" />
+                <ShieldCheck
+                  aria-hidden="true"
+                  className="size-3.5 text-gold"
+                />
                 Integridade
               </p>
               <p className="mt-1.5 text-[0.625rem] leading-relaxed text-mist-dim">
@@ -288,7 +314,10 @@ export function ReceiptPage() {
       {failed && (
         <InlineAlert tone="error" title="Liquidação com falha" className="mt-4">
           <span className="flex items-start gap-1.5">
-            <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+            <TriangleAlert
+              aria-hidden="true"
+              className="mt-0.5 size-3.5 shrink-0"
+            />
             O valor não foi transferido. A equipe administrativa precisa revisar
             esta liquidação no servidor.
           </span>

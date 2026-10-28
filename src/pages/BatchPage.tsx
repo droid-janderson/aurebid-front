@@ -34,7 +34,7 @@ import { publicBatchCode } from '@/utils/pseudonym';
 import { cn } from '@/utils/cn';
 
 const connectionLabel: Record<string, string> = {
-  idle: 'Sem conexão em tempo real',
+  idle: 'Atualização automática',
   connecting: 'Conectando',
   connected: 'Ao vivo',
   disconnected: 'Reconectando',
@@ -44,13 +44,18 @@ const connectionLabel: Record<string, string> = {
 export function BatchPage() {
   const { batchId } = useParams<{ batchId: string }>();
   const { user } = useAuth();
+  const viewerId = user?.id ?? 'anon';
   const batchQuery = useQuery({
-    queryKey: queryKeys.batchs.detail(batchId ?? ''),
+    queryKey: queryKeys.batchs.detail(batchId ?? '', viewerId),
     queryFn: () => batchsService.get(batchId!),
     enabled: Boolean(batchId),
+    refetchInterval: (query) => {
+      if (user) return false;
+      return query.state.data?.status === 'ACTIVE' ? 15_000 : false;
+    },
   });
 
-  const realtimeStatus = useBatchRoom(batchId, Boolean(batchId));
+  const realtimeStatus = useBatchRoom(batchId, Boolean(batchId) && Boolean(user));
   useDocumentTitle(batchQuery.data?.title ?? 'Lote');
 
   if (!batchId) {

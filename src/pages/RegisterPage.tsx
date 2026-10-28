@@ -1,67 +1,71 @@
-import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowRight, Eye, EyeOff, Gavel, Landmark } from 'lucide-react';
-import { AuthShell } from '@/components/auth/AuthShell';
-import { FieldWrapper, Input } from '@/components/ui/Field';
-import { Button } from '@/components/ui/Button';
-import { InlineAlert } from '@/components/feedback/InlineAlert';
-import { useAuth } from '@/contexts/AuthContext';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { useToast } from '@/components/ui/Toast';
+import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowRight, Eye, EyeOff, Gavel, Landmark } from "lucide-react";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { FieldWrapper, Input } from "@/components/ui/Field";
+import { Button } from "@/components/ui/Button";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
+import { useAuth } from "@/contexts/AuthContext";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useToast } from "@/components/ui/Toast";
 import {
   fieldErrorFor,
   presentError,
   type ErrorPresentation,
-} from '@/utils/errors';
-import { safeRedirect } from '@/utils/redirect';
-import { cn } from '@/utils/cn';
+} from "@/utils/errors";
+import { safeRedirect } from "@/utils/redirect";
+import { cn } from "@/utils/cn";
 
 const schema = z
   .object({
     name: z
       .string()
-      .min(2, 'Informe ao menos 2 caracteres.')
-      .max(100, 'Use no máximo 100 caracteres.'),
-    email: z.string().min(1, 'Informe seu e-mail.').email('Informe um e-mail válido.'),
-    password: z.string().min(8, 'A senha precisa ter ao menos 8 caracteres.'),
-    confirmPassword: z.string().min(1, 'Confirme sua senha.'),
-    role: z.enum(['BIDDER', 'AUCTIONEER']),
+      .min(2, "Informe ao menos 2 caracteres.")
+      .max(100, "Use no máximo 100 caracteres."),
+    email: z
+      .string()
+      .min(1, "Informe seu e-mail.")
+      .email("Informe um e-mail válido."),
+    password: z.string().min(8, "A senha precisa ter ao menos 8 caracteres."),
+    confirmPassword: z.string().min(1, "Confirme sua senha."),
+    role: z.enum(["BIDDER", "AUCTIONEER"]),
   })
   .refine((values) => values.password === values.confirmPassword, {
-    path: ['confirmPassword'],
-    message: 'As senhas não coincidem.',
+    path: ["confirmPassword"],
+    message: "As senhas não coincidem.",
   });
 
 type RegisterForm = z.infer<typeof schema>;
 
 const roles = [
   {
-    value: 'BIDDER' as const,
+    value: "BIDDER" as const,
     icon: Gavel,
-    title: 'Quero dar lances',
-    description: 'Carteira para reservar saldo e disputar lotes.',
+    title: "Quero dar lances",
+    description: "Carteira para reservar saldo e disputar lotes.",
   },
   {
-    value: 'AUCTIONEER' as const,
+    value: "AUCTIONEER" as const,
     icon: Landmark,
-    title: 'Quero leiloar',
-    description: 'Painel para publicar lotes e acompanhar resultados.',
+    title: "Quero leiloar",
+    description: "Painel para publicar lotes e acompanhar resultados.",
   },
 ];
 
 export function RegisterPage() {
-  useDocumentTitle('Criar conta');
+  useDocumentTitle("Criar conta");
   const { register: registerUser } = useAuth();
   const { push } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formError, setFormError] = useState<ErrorPresentation | null>(null);
 
-  const from = safeRedirect(new URLSearchParams(location.search).get('from'));
+  const from = safeRedirect(new URLSearchParams(location.search).get("from"));
 
   const {
     register,
@@ -72,15 +76,15 @@ export function RegisterPage() {
   } = useForm<RegisterForm>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      role: 'BIDDER',
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      role: "BIDDER",
     },
   });
 
-  const selectedRole = watch('role');
+  const selectedRole = watch("role");
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
@@ -92,19 +96,19 @@ export function RegisterPage() {
         role: values.role,
       });
       push({
-        title: 'Conta criada',
-        description: 'Sua sessão já está ativa. Boas disputas.',
-        tone: 'success',
+        title: "Conta criada",
+        description: "Sua sessão já está ativa. Boas disputas.",
+        tone: "success",
       });
       navigate(from, { replace: true });
     } catch (error) {
-      const nameError = fieldErrorFor(error, 'name');
-      const emailError = fieldErrorFor(error, 'email');
-      const passwordError = fieldErrorFor(error, 'password');
+      const nameError = fieldErrorFor(error, "name");
+      const emailError = fieldErrorFor(error, "email");
+      const passwordError = fieldErrorFor(error, "password");
 
-      if (nameError) setError('name', { message: nameError });
-      if (emailError) setError('email', { message: emailError });
-      if (passwordError) setError('password', { message: passwordError });
+      if (nameError) setError("name", { message: nameError });
+      if (emailError) setError("email", { message: emailError });
+      if (passwordError) setError("password", { message: passwordError });
       setFormError(presentError(error));
     }
   });
@@ -115,9 +119,9 @@ export function RegisterPage() {
       description="Escolha como participa da casa. Você poderá entrar e sair a qualquer momento."
       footer={
         <>
-          Já possui conta?{' '}
+          Já possui conta?{" "}
           <Link
-            to={`/login${from !== '/' ? `?from=${encodeURIComponent(from)}` : ''}`}
+            to={`/login${from !== "/" ? `?from=${encodeURIComponent(from)}` : ""}`}
             className="font-medium text-gold transition-colors hover:text-gold-bright"
           >
             Entrar
@@ -126,7 +130,11 @@ export function RegisterPage() {
       }
     >
       {formError && (
-        <InlineAlert tone={formError.tone} title={formError.title} className="mb-5">
+        <InlineAlert
+          tone={formError.tone}
+          title={formError.title}
+          className="mb-5"
+        >
           {formError.message}
         </InlineAlert>
       )}
@@ -141,24 +149,24 @@ export function RegisterPage() {
               <label
                 key={role.value}
                 className={cn(
-                  'flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors',
+                  "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors",
                   selectedRole === role.value
-                    ? 'border-gold/50 bg-gold/[0.07]'
-                    : 'border-line bg-ink/40 hover:border-line-strong',
+                    ? "border-gold/50 bg-gold/[0.07]"
+                    : "border-line bg-ink/40 hover:border-line-strong",
                 )}
               >
                 <input
                   type="radio"
                   value={role.value}
                   className="sr-only"
-                  {...register('role')}
+                  {...register("role")}
                 />
                 <span
                   className={cn(
-                    'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border',
+                    "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border",
                     selectedRole === role.value
-                      ? 'border-gold/40 bg-gold/10 text-gold'
-                      : 'border-line-strong bg-surface text-mist-dim',
+                      ? "border-gold/40 bg-gold/10 text-gold"
+                      : "border-line-strong bg-surface text-mist-dim",
                   )}
                 >
                   <role.icon aria-hidden="true" className="size-4" />
@@ -176,26 +184,36 @@ export function RegisterPage() {
           </div>
         </fieldset>
 
-        <FieldWrapper label="Nome completo" htmlFor="register-name" error={errors.name?.message} required>
+        <FieldWrapper
+          label="Nome completo"
+          htmlFor="register-name"
+          error={errors.name?.message}
+          required
+        >
           <Input
             id="register-name"
             autoComplete="name"
             placeholder="Como devemos chamar você"
             invalid={Boolean(errors.name)}
-            aria-describedby={errors.name ? 'register-name-error' : undefined}
-            {...register('name')}
+            aria-describedby={errors.name ? "register-name-error" : undefined}
+            {...register("name")}
           />
         </FieldWrapper>
 
-        <FieldWrapper label="E-mail" htmlFor="register-email" error={errors.email?.message} required>
+        <FieldWrapper
+          label="E-mail"
+          htmlFor="register-email"
+          error={errors.email?.message}
+          required
+        >
           <Input
             id="register-email"
             type="email"
             autoComplete="email"
             placeholder="voce@exemplo.com"
             invalid={Boolean(errors.email)}
-            aria-describedby={errors.email ? 'register-email-error' : undefined}
-            {...register('email')}
+            aria-describedby={errors.email ? "register-email-error" : undefined}
+            {...register("email")}
           />
         </FieldWrapper>
 
@@ -204,27 +222,27 @@ export function RegisterPage() {
             label="Senha"
             htmlFor="register-password"
             error={errors.password?.message}
-            hint={!errors.password ? 'Mínimo de 8 caracteres.' : undefined}
+            hint={!errors.password ? "Mínimo de 8 caracteres." : undefined}
             required
           >
             <div className="relative">
               <Input
                 id="register-password"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 placeholder="Crie uma senha"
                 className="pr-10"
                 invalid={Boolean(errors.password)}
                 aria-describedby={
-                  errors.password ? 'register-password-error' : undefined
+                  errors.password ? "register-password-error" : undefined
                 }
-                {...register('password')}
+                {...register("password")}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((value) => !value)}
-                className="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-1.5 text-mist-dim transition-colors hover:text-chalk"
-                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer rounded-md p-1.5 text-mist-dim transition-colors hover:text-chalk"
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
               >
                 {showPassword ? (
                   <EyeOff aria-hidden="true" className="size-4" />
@@ -241,23 +259,39 @@ export function RegisterPage() {
             error={errors.confirmPassword?.message}
             required
           >
-            <Input
-              id="register-confirm"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="new-password"
-              placeholder="Repita a senha"
-              invalid={Boolean(errors.confirmPassword)}
-              aria-describedby={
-                errors.confirmPassword ? 'register-confirm-error' : undefined
-              }
-              {...register('confirmPassword')}
-            />
+            <div className="relative">
+              <Input
+                id="register-confirm"
+                type={showConfirmPassword ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Repita a senha"
+                invalid={Boolean(errors.confirmPassword)}
+                aria-describedby={
+                  errors.confirmPassword ? "register-confirm-error" : undefined
+                }
+                {...register("confirmPassword")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((value) => !value)}
+                className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer rounded-md p-1.5 text-mist-dim transition-colors hover:text-chalk"
+                aria-label={
+                  showConfirmPassword ? "Ocultar senha" : "Mostrar senha"
+                }
+              >
+                {showConfirmPassword ? (
+                  <EyeOff aria-hidden="true" className="size-4" />
+                ) : (
+                  <Eye aria-hidden="true" className="size-4" />
+                )}
+              </button>
+            </div>
           </FieldWrapper>
         </div>
 
         <Button
           type="submit"
-          className="w-full"
+          className="w-full cursor-pointer"
           loading={isSubmitting}
           rightIcon={<ArrowRight aria-hidden="true" className="size-4" />}
         >

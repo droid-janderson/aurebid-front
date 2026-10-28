@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowDownLeft,
@@ -12,25 +12,25 @@ import {
   Receipt,
   RefreshCw,
   Wallet as WalletIcon,
-} from 'lucide-react';
-import type { WalletReservation, WalletTransaction } from '@/types/domain';
-import { walletService } from '@/services/wallet.service';
-import { queryKeys } from '@/services/query-keys';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { useToast } from '@/components/ui/Toast';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Dialog';
-import { FieldWrapper, Input } from '@/components/ui/Field';
-import { InlineAlert } from '@/components/feedback/InlineAlert';
-import { ErrorState } from '@/components/feedback/ErrorState';
-import { EmptyState } from '@/components/feedback/EmptyState';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { formatBRL, parseBRLInput } from '@/utils/money';
-import { formatDateTime } from '@/utils/datetime';
-import { presentError } from '@/utils/errors';
-import { transactionTypeLabel } from '@/utils/labels';
-import { cn } from '@/utils/cn';
+} from "lucide-react";
+import type { WalletReservation, WalletTransaction } from "@/types/domain";
+import { walletService } from "@/services/wallet.service";
+import { queryKeys } from "@/services/query-keys";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useToast } from "@/components/ui/Toast";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Dialog";
+import { FieldWrapper, Input } from "@/components/ui/Field";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
+import { ErrorState } from "@/components/feedback/ErrorState";
+import { EmptyState } from "@/components/feedback/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { formatBRL, parseBRLInput } from "@/utils/money";
+import { formatDateTime } from "@/utils/datetime";
+import { presentError } from "@/utils/errors";
+import { transactionTypeLabel } from "@/utils/labels";
+import { cn } from "@/utils/cn";
 
 const typeIcons = {
   DEPOSIT: ArrowDownLeft,
@@ -56,14 +56,14 @@ function ReservationRow({ reservation }: { reservation: WalletReservation }) {
               {reservation.batch.title}
             </Link>
           ) : (
-            'Reserva de lance'
+            "Reserva de lance"
           )}
         </p>
         <p className="mt-0.5 flex items-center gap-1.5 text-[0.625rem] text-mist-dim">
           <Clock aria-hidden="true" className="size-3" />
           {reservation.batch
             ? `Encerra ${formatDateTime(reservation.batch.endsAt)}`
-            : 'Vinculada a um lance'}
+            : "Vinculada a um lance"}
         </p>
       </div>
       <span className="numeric shrink-0 text-[0.8125rem] text-gold-bright">
@@ -76,19 +76,19 @@ function ReservationRow({ reservation }: { reservation: WalletReservation }) {
 function TransactionRow({ transaction }: { transaction: WalletTransaction }) {
   const Icon = typeIcons[transaction.type];
   const positive =
-    transaction.type === 'DEPOSIT' ||
-    transaction.type === 'SELLER_SETTLEMENT_CREDIT' ||
-    transaction.type === 'REFUND';
+    transaction.type === "DEPOSIT" ||
+    transaction.type === "SELLER_SETTLEMENT_CREDIT" ||
+    transaction.type === "REFUND";
   const amount = Math.abs(transaction.amount);
 
   return (
     <li className="flex items-center gap-3 px-4 py-3">
       <span
         className={cn(
-          'flex size-8 shrink-0 items-center justify-center rounded-lg border',
+          "flex size-8 shrink-0 items-center justify-center rounded-lg border",
           positive
-            ? 'border-win/25 bg-win/[0.06] text-win'
-            : 'border-line-strong bg-ink/40 text-mist',
+            ? "border-win/25 bg-win/[0.06] text-win"
+            : "border-line-strong bg-ink/40 text-mist",
         )}
       >
         <Icon aria-hidden="true" className="size-3.5" />
@@ -99,28 +99,28 @@ function TransactionRow({ transaction }: { transaction: WalletTransaction }) {
         </p>
         <p className="mt-0.5 truncate text-[0.625rem] text-mist-dim">
           {formatDateTime(transaction.createdAt)}
-          {transaction.description ? ` · ${transaction.description}` : ''}
+          {transaction.description ? ` · ${transaction.description}` : ""}
         </p>
       </div>
       <span
         className={cn(
-          'numeric shrink-0 text-[0.8125rem]',
-          positive ? 'text-win' : 'text-chalk',
+          "numeric shrink-0 text-[0.8125rem]",
+          positive ? "text-win" : "text-chalk",
         )}
       >
-        {positive ? '+' : '−'} {formatBRL(amount)}
+        {positive ? "+" : "−"} {formatBRL(amount)}
       </span>
     </li>
   );
 }
 
 export function WalletPage() {
-  useDocumentTitle('Carteira');
+  useDocumentTitle("Carteira");
   const queryClient = useQueryClient();
   const { push } = useToast();
   const [page, setPage] = useState(1);
   const [depositOpen, setDepositOpen] = useState(false);
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState("");
   const [depositError, setDepositError] = useState<string | null>(null);
   const [depositing, setDepositing] = useState(false);
 
@@ -140,7 +140,7 @@ export function WalletPage() {
   const error = walletQuery.error ? presentError(walletQuery.error) : null;
 
   const activeReservations = useMemo(
-    () => wallet?.reservations.filter((item) => item.status === 'ACTIVE') ?? [],
+    () => wallet?.reservations.filter((item) => item.status === "ACTIVE") ?? [],
     [wallet],
   );
 
@@ -148,23 +148,28 @@ export function WalletPage() {
     setDepositError(null);
     const parsed = parseBRLInput(amount);
     if (!parsed || parsed <= 0) {
-      setDepositError('Informe um valor de depósito positivo.');
+      setDepositError("Informe um valor de depósito positivo.");
       return;
     }
 
     setDepositing(true);
     try {
-      const result = await walletService.deposit({ amount: parsed, method: 'PIX' });
+      const result = await walletService.deposit({
+        amount: parsed,
+        method: "PIX",
+      });
       push({
-        title: 'Depósito registrado',
+        title: "Depósito registrado",
         description: `${formatBRL(result.transaction.amount)} confirmado pelo servidor.`,
-        tone: 'success',
+        tone: "success",
       });
       setDepositOpen(false);
-      setAmount('');
+      setAmount("");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.wallet.detail }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.wallet.transactions(page) }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.wallet.transactions(page),
+        }),
       ]);
     } catch (submitError) {
       const presentation = presentError(submitError);
@@ -189,6 +194,7 @@ export function WalletPage() {
             <Button
               variant="secondary"
               size="sm"
+              className="cursor-pointer"
               onClick={() => {
                 void walletQuery.refetch();
                 void transactionsQuery.refetch();
@@ -200,6 +206,7 @@ export function WalletPage() {
             </Button>
             <Button
               size="sm"
+              className="cursor-pointer"
               onClick={() => setDepositOpen(true)}
               leftIcon={<Plus aria-hidden="true" className="size-3.5" />}
             >
@@ -260,8 +267,10 @@ export function WalletPage() {
                 {formatBRL(wallet.reservedAmount)}
               </p>
               <p className="mt-1 text-[0.6875rem] text-mist-dim">
-                {activeReservations.length}{' '}
-                {activeReservations.length === 1 ? 'reserva ativa' : 'reservas ativas'}
+                {activeReservations.length}{" "}
+                {activeReservations.length === 1
+                  ? "reserva ativa"
+                  : "reservas ativas"}
               </p>
             </div>
 
@@ -280,9 +289,13 @@ export function WalletPage() {
           </div>
 
           {wallet.availableAmount < 0 && (
-            <InlineAlert tone="warning" title="Saldo disponível negativo" className="mt-4">
-              As reservas ativas superam o saldo atual. Regularize a carteira antes
-              de disputar novos lotes.
+            <InlineAlert
+              tone="warning"
+              title="Saldo disponível negativo"
+              className="mt-4"
+            >
+              As reservas ativas superam o saldo atual. Regularize a carteira
+              antes de disputar novos lotes.
             </InlineAlert>
           )}
 
@@ -291,7 +304,10 @@ export function WalletPage() {
               <div className="flex items-end justify-between gap-2">
                 <div>
                   <p className="eyebrow">Comprometido</p>
-                  <h2 id="reservas-title" className="mt-1.5 font-display text-xl text-chalk">
+                  <h2
+                    id="reservas-title"
+                    className="mt-1.5 font-display text-xl text-chalk"
+                  >
                     Reservas ativas
                   </h2>
                 </div>
@@ -312,7 +328,10 @@ export function WalletPage() {
                 ) : (
                   <ul className="divide-y divide-line/60 bg-raised/30">
                     {activeReservations.map((reservation) => (
-                      <ReservationRow key={reservation.id} reservation={reservation} />
+                      <ReservationRow
+                        key={reservation.id}
+                        reservation={reservation}
+                      />
                     ))}
                   </ul>
                 )}
@@ -323,7 +342,10 @@ export function WalletPage() {
               <div className="flex items-end justify-between gap-2">
                 <div>
                   <p className="eyebrow">Movimentações</p>
-                  <h2 id="extrato-title" className="mt-1.5 font-display text-xl text-chalk">
+                  <h2
+                    id="extrato-title"
+                    className="mt-1.5 font-display text-xl text-chalk"
+                  >
                     Extrato da carteira
                   </h2>
                 </div>
@@ -359,38 +381,46 @@ export function WalletPage() {
                 ) : (
                   <ul className="divide-y divide-line/60 bg-raised/30">
                     {transactionsQuery.data.data.map((transaction) => (
-                      <TransactionRow key={transaction.id} transaction={transaction} />
+                      <TransactionRow
+                        key={transaction.id}
+                        transaction={transaction}
+                      />
                     ))}
                   </ul>
                 )}
               </div>
 
-              {transactionsQuery.data && transactionsQuery.data.meta.totalPages > 1 && (
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <p className="text-[0.6875rem] text-mist-dim">
-                    Página {transactionsQuery.data.meta.page} de{' '}
-                    {transactionsQuery.data.meta.totalPages}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={!transactionsQuery.data.meta.hasPrev}
-                      onClick={() => setPage((value) => Math.max(1, value - 1))}
-                    >
-                      Anterior
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={!transactionsQuery.data.meta.hasNext}
-                      onClick={() => setPage((value) => value + 1)}
-                    >
-                      Próxima
-                    </Button>
+              {transactionsQuery.data &&
+                transactionsQuery.data.meta.totalPages > 1 && (
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <p className="text-[0.6875rem] text-mist-dim">
+                      Página {transactionsQuery.data.meta.page} de{" "}
+                      {transactionsQuery.data.meta.totalPages}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="cursor-pointer"
+                        disabled={!transactionsQuery.data.meta.hasPrev}
+                        onClick={() =>
+                          setPage((value) => Math.max(1, value - 1))
+                        }
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="cursor-pointer"
+                        disabled={!transactionsQuery.data.meta.hasNext}
+                        onClick={() => setPage((value) => value + 1)}
+                      >
+                        Próxima
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </section>
           </div>
         </>
@@ -409,12 +439,18 @@ export function WalletPage() {
             <Button
               variant="ghost"
               size="sm"
+              className="cursor-pointer"
               onClick={() => setDepositOpen(false)}
               disabled={depositing}
             >
               Cancelar
             </Button>
-            <Button size="sm" loading={depositing} onClick={() => void submitDeposit()}>
+            <Button
+              size="sm"
+              className="cursor-pointer"
+              loading={depositing}
+              onClick={() => void submitDeposit()}
+            >
               Confirmar depósito
             </Button>
           </>
@@ -441,7 +477,10 @@ export function WalletPage() {
             />
           </FieldWrapper>
           <p className="flex items-start gap-1.5 text-[0.625rem] leading-relaxed text-mist-dim">
-            <AlertTriangle aria-hidden="true" className="mt-0.5 size-3 shrink-0 text-gold" />
+            <AlertTriangle
+              aria-hidden="true"
+              className="mt-0.5 size-3 shrink-0 text-gold"
+            />
             O comprovante e a efetivação dependem do backend. A AureBid não
             confirma o depósito apenas no navegador.
           </p>

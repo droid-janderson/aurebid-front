@@ -143,7 +143,7 @@ export function LoginPage() {
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
-              className="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-1.5 text-mist-dim transition-colors hover:text-chalk"
+              className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer rounded-md p-1.5 text-mist-dim transition-colors hover:text-chalk"
               aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
             >
               {showPassword ? (
@@ -157,7 +157,7 @@ export function LoginPage() {
 
         <Button
           type="submit"
-          className="w-full"
+          className="w-full cursor-pointer"
           loading={isSubmitting}
           rightIcon={<ArrowRight aria-hidden="true" className="size-4" />}
         >
@@ -173,7 +173,7 @@ export function LoginPage() {
           <button
             type="button"
             onClick={() => fillDemo("auctioneer@aurebid.com", "auctioneer123")}
-            className="flex items-center justify-between rounded-md px-1 py-0.5 text-left text-xs text-mist transition-colors hover:text-chalk"
+            className="flex items-center justify-between cursor-pointer rounded-md px-1 py-0.5 text-left text-xs text-mist transition-colors hover:text-chalk"
           >
             <span>Leiloeiro</span>
             <span className="font-mono text-[0.6875rem] text-mist-dim">
@@ -183,7 +183,7 @@ export function LoginPage() {
           <button
             type="button"
             onClick={() => fillDemo("bidder@aurebid.com", "bidder123")}
-            className="flex items-center justify-between rounded-md px-1 py-0.5 text-left text-xs text-mist transition-colors hover:text-chalk"
+            className="flex items-center justify-between cursor-pointer rounded-md px-1 py-0.5 text-left text-xs text-mist transition-colors hover:text-chalk"
           >
             <span>Licitante</span>
             <span className="font-mono text-[0.6875rem] text-mist-dim">
@@ -193,7 +193,7 @@ export function LoginPage() {
           <button
             type="button"
             onClick={() => fillDemo("bidder2@aurebid.com", "bidder123")}
-            className="flex items-center justify-between rounded-md px-1 py-0.5 text-left text-xs text-mist transition-colors hover:text-chalk"
+            className="flex items-center justify-between cursor-pointer rounded-md px-1 py-0.5 text-left text-xs text-mist transition-colors hover:text-chalk"
           >
             <span>Licitante 2</span>
             <span className="font-mono text-[0.6875rem] text-mist-dim">
