@@ -17,6 +17,7 @@ import type { WalletReservation, WalletTransaction } from "@/types/domain";
 import { walletService } from "@/services/wallet.service";
 import { queryKeys } from "@/services/query-keys";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useWalletRealtime } from "@/realtime/useWalletRealtime";
 import { useToast } from "@/components/ui/Toast";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -116,6 +117,7 @@ function TransactionRow({ transaction }: { transaction: WalletTransaction }) {
 
 export function WalletPage() {
   useDocumentTitle("Carteira");
+  useWalletRealtime(true);
   const queryClient = useQueryClient();
   const { push } = useToast();
   const [page, setPage] = useState(1);

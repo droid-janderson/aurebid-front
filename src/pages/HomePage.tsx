@@ -17,6 +17,7 @@ import { queryKeys } from "@/services/query-keys";
 import type { BatchListFilters } from "@/types/domain";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useBatchCatalogRoom } from "@/realtime/useBatchCatalogRoom";
 import { presentError } from "@/utils/errors";
 import { BatchSpotlight } from "@/components/batchs/BatchSpotlight";
 import { BatchCard } from "@/components/batchs/BatchCard";
@@ -90,7 +91,7 @@ export function HomePage() {
   });
 
   const spotlightQuery = useQuery({
-    queryKey: ["batchs", "spotlight", "active"],
+    queryKey: queryKeys.batchs.spotlight,
     queryFn: () =>
       batchsService.list({
         status: "ACTIVE",
@@ -105,6 +106,14 @@ export function HomePage() {
     const items = spotlightQuery.data?.data ?? [];
     return [...items].sort((a, b) => b.bidCount - a.bidCount)[0] ?? items[0];
   }, [spotlightQuery.data]);
+
+  const catalogBatchIds = useMemo(() => {
+    const ids = lotsQuery.data?.data.map((batch) => batch.id) ?? [];
+    if (spotlight && !ids.includes(spotlight.id)) ids.push(spotlight.id);
+    return ids;
+  }, [lotsQuery.data, spotlight]);
+
+  useBatchCatalogRoom(catalogBatchIds);
 
   const error = lotsQuery.error ? presentError(lotsQuery.error) : null;
   const updateFilters = (next: BatchFilterState) => {

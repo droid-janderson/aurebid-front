@@ -92,8 +92,25 @@ export function useBatchRoom(batchId: string | undefined, enabled: boolean) {
         setStatus('connected');
       });
 
+      let previousStatus = client.getStatus();
+
       const offConnection = client.onStatus((next) => {
         if (!cancelled) setStatus(next);
+
+        if (
+          next === 'connected' &&
+          (previousStatus === 'disconnected' || previousStatus === 'error')
+        ) {
+          refreshLot();
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.wallet.detail,
+          });
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.bids.mine,
+          });
+        }
+
+        previousStatus = next;
       });
 
       cleanup = () => {

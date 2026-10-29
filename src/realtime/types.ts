@@ -58,6 +58,23 @@ export interface ExtendedEvent {
   serverTime: string;
 }
 
+export interface WalletChangedEvent {
+  reason:
+    | 'RESERVATION_HELD'
+    | 'RESERVATION_UPDATED'
+    | 'RESERVATION_RELEASED'
+    | 'RESERVATION_CONSUMED'
+    | 'DEPOSIT'
+    | 'WITHDRAWAL'
+    | 'SETTLEMENT';
+  batchId?: string;
+  serverTime: string;
+}
+
+export interface RealtimeErrorEvent {
+  message: string;
+}
+
 export interface RealtimeEventMap {
   'auction:state': AuctionStateEvent;
   'bid:new': NewBidEvent;
@@ -65,10 +82,13 @@ export interface RealtimeEventMap {
   'auction:ended': AuctionEndedEvent;
   'auction:extended': ExtendedEvent;
   'auction:timer': TimerEvent;
+  'wallet:changed': WalletChangedEvent;
+  error: RealtimeErrorEvent;
 }
 
 export interface RealtimeClient {
   connect(token: string | null): void;
+  setAuth(token: string | null): void;
   disconnect(): void;
   joinLot(batchId: string): void;
   leaveLot(batchId: string): void;

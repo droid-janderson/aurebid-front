@@ -18,6 +18,7 @@ import {
   SESSION_EXPIRED_EVENT,
   sessionStore,
 } from '@/services/session.store';
+import { disconnectRealtime } from '@/realtime';
 
 export type AuthStatus = 'loading' | 'authenticated' | 'anonymous';
 
@@ -74,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const handleExpired = () => {
+      disconnectRealtime();
       setUser(null);
       setStatus('anonymous');
       queryClient.clear();
@@ -110,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await authService.logout();
+    disconnectRealtime();
     sessionStore.clear();
     setUser(null);
     setStatus('anonymous');

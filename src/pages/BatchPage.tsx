@@ -45,17 +45,14 @@ export function BatchPage() {
   const { batchId } = useParams<{ batchId: string }>();
   const { user } = useAuth();
   const viewerId = user?.id ?? 'anon';
+  const realtimeStatus = useBatchRoom(batchId, Boolean(batchId));
   const batchQuery = useQuery({
     queryKey: queryKeys.batchs.detail(batchId ?? '', viewerId),
     queryFn: () => batchsService.get(batchId!),
     enabled: Boolean(batchId),
-    refetchInterval: (query) => {
-      if (user) return false;
-      return query.state.data?.status === 'ACTIVE' ? 15_000 : false;
-    },
+    refetchInterval: realtimeStatus === 'connected' ? false : 15_000,
   });
 
-  const realtimeStatus = useBatchRoom(batchId, Boolean(batchId) && Boolean(user));
   useDocumentTitle(batchQuery.data?.title ?? 'Lote');
 
   if (!batchId) {
