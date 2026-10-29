@@ -88,14 +88,20 @@ export function formatCountdown(parts: CountdownParts): string {
   if (parts.days > 0) {
     return `${parts.days}d ${pad(parts.hours)}h ${pad(parts.minutes)}m`;
   }
-  return `${pad(parts.hours)}:${pad(parts.minutes)}:${pad(parts.seconds)}`;
+  if (parts.hours > 0) {
+    return `${pad(parts.hours)}:${pad(parts.minutes)}:${pad(parts.seconds)}`;
+  }
+  return `${pad(parts.minutes)}:${pad(parts.seconds)}`;
 }
 
 export function formatCountdownCompact(parts: CountdownParts): string {
   const pad = (value: number) => String(value).padStart(2, '0');
   if (parts.expired) return 'Encerrado';
   if (parts.days > 0) return `${parts.days}d ${pad(parts.hours)}h`;
-  return `${pad(parts.hours)}:${pad(parts.minutes)}:${pad(parts.seconds)}`;
+  if (parts.hours > 0) {
+    return `${pad(parts.hours)}:${pad(parts.minutes)}:${pad(parts.seconds)}`;
+  }
+  return `${pad(parts.minutes)}:${pad(parts.seconds)}`;
 }
 
 export function toZonedInputValue(value: string | Date | null | undefined): string {

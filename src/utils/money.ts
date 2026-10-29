@@ -5,6 +5,11 @@ const brlFormatter = new Intl.NumberFormat('pt-BR', {
   maximumFractionDigits: 2,
 });
 
+const amountFormatter = new Intl.NumberFormat('pt-BR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 const compactFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',
@@ -60,5 +65,13 @@ export function parseBRLInput(raw: string): number | null {
 }
 
 export function formatAmountInput(value: number | string): string {
-  return Number(value).toFixed(2).replace('.', ',');
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return '';
+  return amountFormatter.format(numeric);
+}
+
+export function maskMoneyInput(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 13);
+  if (!digits) return '';
+  return amountFormatter.format(Number(digits) / 100);
 }

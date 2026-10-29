@@ -51,7 +51,7 @@ describe('sala do lote', () => {
 
     const input = await screen.findByLabelText('Seu lance');
     await user.clear(input);
-    await user.type(input, '99999');
+    await user.type(input, '9999900');
     await user.click(screen.getByRole('button', { name: /Confirmar lance/i }));
 
     const messages = await screen.findAllByText(
