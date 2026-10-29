@@ -4,6 +4,8 @@
 
 > **Este repositório é somente o frontend.** O backend, o banco e as regras financeiras vivem no projeto [aurebid-backend](https://github.com/droid-janderson/aurebid-back). Nenhuma confirmação financeira, cálculo de liquidação ou verificação de integridade é inventada no navegador.
 
+---
+
 ## Comportamento Inesperado
 
 Durante os testes no navegador [Brave](https://brave.com/pt-br/), foram identificados problemas na conexão em tempo real (Socket.IO) com o backend, possivelmente relacionados às configurações de privacidade e ao Brave Shields (Bloqueador de rastreadores e anúncios).
@@ -44,6 +46,28 @@ npm run dev
 ```
 
 A aplicação sobe em **http://localhost:3001**, mesma origem esperada pelo CORS do backend.
+
+## Deploy e hospedagem
+
+O frontend do AureBid é desenvolvido com **React, Vite e TypeScript** e está hospedado na **[Vercel](https://vercel.com/)**.
+
+A Vercel é responsável por disponibilizar a interface web publicamente, permitindo que os usuários acessem a plataforma pelo navegador.
+
+### Tecnologias e configuração de deploy
+
+- **Hospedagem:** Vercel.
+- **Framework:** React.
+- **Ferramenta de build:** Vite.
+- **Linguagem:** TypeScript.
+- **Roteamento:** aplicação de página única (SPA).
+- **Comunicação com o backend:** API HTTP e Socket.IO para funcionalidades em tempo real.
+
+### Comunicação com o backend
+
+O frontend consome a API do AureBid para consultar lotes, registrar lances e acessar os demais recursos da plataforma. O Socket.IO é utilizado para receber atualizações em tempo real sobre lances e mudanças no estado dos leilões.
+
+As URLs da API e as configurações de conexão devem corresponder ao ambiente de execução. Também é necessário que o backend permita a origem do frontend nas configurações de CORS, tanto para requisições HTTP quanto para conexões Socket.IO.
+> A aplicação está publicada e pode ser acessada em **[aurebid.vercel.app](aurebid.vercel.app)**
 
 ### Scripts
 
