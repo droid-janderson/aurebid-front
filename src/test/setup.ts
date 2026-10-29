@@ -1,8 +1,11 @@
 import '@testing-library/jest-dom/vitest';
-import { afterAll, afterEach, beforeAll } from 'vitest';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { sessionStore } from '@/services/session.store';
 import { server } from '@/test/server';
+import { realtimeTestClient } from '@/test/fake-realtime';
+
+vi.mock('@/realtime', () => import('@/test/fake-realtime'));
 
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'error' });
@@ -10,8 +13,10 @@ beforeAll(() => {
 
 afterEach(() => {
   cleanup();
-  server.resetHandlers();  sessionStorage.clear();
+  server.resetHandlers();
+  sessionStorage.clear();
   sessionStore.clear();
+  realtimeTestClient.reset();
 });
 
 afterAll(() => {
