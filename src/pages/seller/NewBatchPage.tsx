@@ -10,10 +10,10 @@ import {
   ArrowRight,
   Check,
   Image as ImageIcon,
+  Maximize2,
   Package,
   RefreshCw,
   Search,
-  Sparkles,
 } from "lucide-react";
 import type { CatalogCard, CreateBatchInput } from "@/types/domain";
 import { catalogService } from "@/services/catalog.service";
@@ -24,6 +24,7 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useToast } from "@/components/ui/Toast";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CardImage } from "@/components/cards/CardImage";
+import { CardPreviewDialog } from "@/components/catalog/CardPreviewDialog";
 import { FieldWrapper, Input, Select, Textarea } from "@/components/ui/Field";
 import { MoneyInput } from "@/components/ui/MoneyInput";
 import { Button, buttonStyles } from "@/components/ui/Button";
@@ -145,6 +146,8 @@ export function NewBatchPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [selectedCard, setSelectedCard] = useState<CatalogCard | null>(null);
+  const [previewCard, setPreviewCard] = useState<CatalogCard | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [formError, setFormError] = useState<ErrorPresentation | null>(null);
   const debouncedSearch = useDebouncedValue(search, 350);
 
@@ -186,6 +189,8 @@ export function NewBatchPage() {
     enabled: mode === "catalog",
     staleTime: 60_000,
   });
+
+  const previewImageUrl = useDebouncedValue(watch("imageUrl"), 400);
 
   useEffect(() => {
     setPage(1);
@@ -427,40 +432,56 @@ export function NewBatchPage() {
                     {catalogQuery.data.items.map((card) => {
                       const selected = selectedCard?.id === card.id;
                       return (
-                        <button
+                        <div
                           key={card.id}
-                          type="button"
-                          onClick={() => selectCard(card)}
                           className={cn(
-                            "group relative flex gap-3 cursor-pointer rounded-xl border p-2.5 text-left transition-colors",
+                            "group relative flex gap-3 rounded-xl border p-2.5 transition-colors",
                             selected
                               ? "border-gold/60 bg-gold/[0.07]"
                               : "border-line bg-raised/30 hover:border-line-strong",
                           )}
-                          aria-pressed={selected}
                         >
-                          <CardImage
-                            src={card.imageSmall ?? card.imageLarge}
-                            alt={`Carta ${card.name}`}
-                            className="h-20 w-14 shrink-0 rounded-md"
-                          />
-                          <span className="min-w-0">
-                            <span className="block truncate font-mono text-[0.5rem] tracking-[0.1em] text-gold/80 uppercase">
-                              {card.setName ?? card.setId} · #{card.number}
+                          <button
+                            type="button"
+                            onClick={() => selectCard(card)}
+                            aria-pressed={selected}
+                            className="flex w-full cursor-pointer gap-3 text-left"
+                          >
+                            <CardImage
+                              src={card.imageSmall ?? card.imageLarge}
+                              alt={`Carta ${card.name}`}
+                              className="h-28 w-20 shrink-0 rounded-md"
+                            />
+                            <span className="min-w-0 flex-1 pr-6">
+                              <span className="block truncate font-mono text-[0.5rem] tracking-[0.1em] text-gold/80 uppercase">
+                                {card.setName ?? card.setId} · #{card.number}
+                              </span>
+                              <span className="mt-1 block truncate text-[0.8125rem] font-medium text-chalk">
+                                {card.name}
+                              </span>
+                              <span className="mt-0.5 block truncate text-[0.625rem] text-mist-dim">
+                                {card.rarity ?? card.supertype ?? "Carta"}
+                              </span>
+                              {selected && (
+                                <span className="mt-1.5 inline-flex items-center gap-1 text-[0.625rem] font-medium text-gold">
+                                  <Check aria-hidden="true" className="size-3" />
+                                  Selecionada
+                                </span>
+                              )}
                             </span>
-                            <span className="mt-1 block truncate text-[0.8125rem] font-medium text-chalk">
-                              {card.name}
-                            </span>
-                            <span className="mt-0.5 block truncate text-[0.625rem] text-mist-dim">
-                              {card.rarity ?? card.supertype ?? "Carta"}
-                            </span>
-                          </span>
-                          {selected && (
-                            <span className="absolute top-1.5 right-1.5 flex size-4 items-center justify-center rounded-full bg-gold text-ink">
-                              <Check aria-hidden="true" className="size-3" />
-                            </span>
-                          )}
-                        </button>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreviewCard(card);
+                              setPreviewOpen(true);
+                            }}
+                            aria-label={`Ampliar imagem de ${card.name}`}
+                            className="absolute top-1.5 right-1.5 flex size-7 cursor-pointer items-center justify-center rounded-full border border-line bg-ink/85 text-mist transition-colors hover:border-gold/50 hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+                          >
+                            <Maximize2 aria-hidden="true" className="size-3.5" />
+                          </button>
+                        </div>
                       );
                     })}
                   </div>
@@ -549,27 +570,48 @@ export function NewBatchPage() {
           )}
 
           {selectedCard && mode === "catalog" && (
-            <div className="surface-soft mt-4 flex items-center gap-3 p-3">
+            <div className="surface mt-4 flex flex-col gap-4 p-4 sm:flex-row">
               <CardImage
-                src={selectedCard.imageSmall ?? selectedCard.imageLarge}
+                src={selectedCard.imageLarge ?? selectedCard.imageSmall}
                 alt={`Carta ${selectedCard.name}`}
-                className="h-16 w-12 shrink-0 rounded-md"
+                className="mx-auto h-52 w-36 shrink-0 rounded-xl sm:mx-0"
               />
-              <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 flex-1 flex-col">
                 <p className="font-mono text-[0.5625rem] tracking-[0.1em] text-gold/80 uppercase">
                   Item selecionado
                 </p>
-                <p className="truncate text-sm font-medium text-chalk">
+                <p className="mt-1 truncate text-lg font-medium text-chalk">
                   {selectedName}
                 </p>
-                <p className="truncate text-[0.6875rem] text-mist-dim">
+                <p className="truncate text-[0.75rem] text-mist-dim">
                   {selectedCard.setName} · #{selectedCard.number}
                 </p>
+                <p className="mt-2 text-[0.6875rem] leading-relaxed text-mist-dim">
+                  {[
+                    selectedCard.rarity,
+                    selectedCard.supertype,
+                    selectedCard.types.join(", "),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || "Carta do catálogo"}
+                </p>
+                <div className="mt-auto pt-4">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setPreviewCard(selectedCard);
+                      setPreviewOpen(true);
+                    }}
+                    leftIcon={
+                      <Maximize2 aria-hidden="true" className="size-3.5" />
+                    }
+                  >
+                    Ampliar imagem
+                  </Button>
+                </div>
               </div>
-              <Sparkles
-                aria-hidden="true"
-                className="size-4 shrink-0 text-gold"
-              />
             </div>
           )}
 
@@ -656,6 +698,26 @@ export function NewBatchPage() {
                 {...register("imageUrl")}
               />
             </FieldWrapper>
+
+            {mode === "manual" && (
+              <div className="flex items-start gap-4 rounded-xl border border-line/70 bg-ink/30 p-3">
+                <CardImage
+                  src={previewImageUrl.trim() || null}
+                  alt="Prévia da imagem do lote"
+                  className="h-40 w-28 shrink-0 rounded-lg"
+                />
+                <div className="min-w-0 pt-1">
+                  <p className="text-[0.6875rem] font-medium text-chalk">
+                    Prévia da imagem
+                  </p>
+                  <p className="mt-1 text-[0.6875rem] leading-relaxed text-mist-dim">
+                    {previewImageUrl.trim()
+                      ? "Se a URL estiver correta, a imagem aparece ao lado e será usada no card do lote."
+                      : "Informe uma URL de imagem para visualizar a prévia."}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <FieldWrapper
@@ -779,6 +841,14 @@ export function NewBatchPage() {
           </form>
         </section>
       </div>
+
+      <CardPreviewDialog
+        card={previewCard}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        selected={previewCard?.id === selectedCard?.id}
+        onSelect={selectCard}
+      />
     </div>
   );
 }

@@ -150,6 +150,43 @@ export const handlers = [
     ),
   ),
 
+  http.get(`${api}/catalog/cards`, () =>
+    HttpResponse.json({
+      items: [
+        {
+          id: 'card-charizard',
+          name: 'Charizard',
+          setId: 'base1',
+          setName: 'Base Set',
+          number: '4',
+          imageSmall: 'https://images.example.com/charizard-small.png',
+          imageLarge: 'https://images.example.com/charizard-large.png',
+          rarity: 'Rare Holo',
+          supertype: 'Pokémon',
+          subtypes: ['Stage 2'],
+          types: ['Fire'],
+        },
+        {
+          id: 'card-pikachu',
+          name: 'Pikachu',
+          setId: 'base1',
+          setName: 'Base Set',
+          number: '58',
+          imageSmall: null,
+          imageLarge: null,
+          rarity: 'Common',
+          supertype: 'Pokémon',
+          subtypes: ['Basic'],
+          types: ['Lightning'],
+        },
+      ],
+      page: 1,
+      pageSize: 8,
+      totalCount: 2,
+      totalPages: 1,
+    }),
+  ),
+
   http.get(`${api}/auctions/leading`, () =>
     HttpResponse.json(
       { success: true, data: [], meta: meta(0) },
