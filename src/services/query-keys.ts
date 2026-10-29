@@ -11,6 +11,7 @@ export const queryKeys = {
     managed: (batchId: string) => ['batchs', 'managed', batchId] as const,
     mine: (filters: BatchListFilters) => ['batchs', 'mine', filters] as const,
     summary: ['batchs', 'mine', 'summary'] as const,
+    leading: ['batchs', 'leading'] as const,
     spotlight: ['batchs', 'spotlight', 'active'] as const,
   },
   bids: {

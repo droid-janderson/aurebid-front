@@ -22,7 +22,8 @@ import { useToast } from "@/components/ui/Toast";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Dialog";
-import { FieldWrapper, Input } from "@/components/ui/Field";
+import { FieldWrapper } from "@/components/ui/Field";
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { EmptyState } from "@/components/feedback/EmptyState";
@@ -465,12 +466,11 @@ export function WalletPage() {
             </InlineAlert>
           )}
           <FieldWrapper label="Valor (R$)" htmlFor="deposit-amount" required>
-            <Input
+            <MoneyInput
               id="deposit-amount"
-              inputMode="decimal"
               value={amount}
-              onChange={(event) => {
-                setAmount(event.target.value);
+              onValueChange={(next) => {
+                setAmount(next);
                 setDepositError(null);
               }}
               placeholder="1.000,00"

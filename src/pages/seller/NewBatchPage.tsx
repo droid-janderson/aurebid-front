@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -25,6 +25,7 @@ import { useToast } from "@/components/ui/Toast";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CardImage } from "@/components/cards/CardImage";
 import { FieldWrapper, Input, Select, Textarea } from "@/components/ui/Field";
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import { Button, buttonStyles } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { EmptyState } from "@/components/feedback/EmptyState";
@@ -156,6 +157,7 @@ export function NewBatchPage() {
   }, []);
 
   const {
+    control,
     register,
     handleSubmit,
     setValue,
@@ -662,13 +664,21 @@ export function NewBatchPage() {
                 error={errors.startingPrice?.message}
                 required
               >
-                <Input
-                  id="batch-starting-price"
-                  inputMode="decimal"
-                  placeholder="4.500,00"
-                  className="numeric"
-                  invalid={Boolean(errors.startingPrice)}
-                  {...register("startingPrice")}
+                <Controller
+                  control={control}
+                  name="startingPrice"
+                  render={({ field }) => (
+                    <MoneyInput
+                      id="batch-starting-price"
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      placeholder="4.500,00"
+                      className="numeric"
+                      invalid={Boolean(errors.startingPrice)}
+                    />
+                  )}
                 />
               </FieldWrapper>
               <FieldWrapper
@@ -677,13 +687,21 @@ export function NewBatchPage() {
                 error={errors.minimumIncrement?.message}
                 required
               >
-                <Input
-                  id="batch-increment"
-                  inputMode="decimal"
-                  placeholder="250,00"
-                  className="numeric"
-                  invalid={Boolean(errors.minimumIncrement)}
-                  {...register("minimumIncrement")}
+                <Controller
+                  control={control}
+                  name="minimumIncrement"
+                  render={({ field }) => (
+                    <MoneyInput
+                      id="batch-increment"
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      placeholder="250,00"
+                      className="numeric"
+                      invalid={Boolean(errors.minimumIncrement)}
+                    />
+                  )}
                 />
               </FieldWrapper>
             </div>

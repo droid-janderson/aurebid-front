@@ -45,6 +45,10 @@ export const batchsService = {
     return request<Batch>(`/catalog/batchs/${encodeURIComponent(batchId)}`);
   },
 
+  listLeading() {
+    return requestWithMeta<Batch>("/auctions/leading");
+  },
+
   create(input: CreateBatchInput) {
     return request<Batch>("/catalog/batchs", { method: "POST", body: input });
   },

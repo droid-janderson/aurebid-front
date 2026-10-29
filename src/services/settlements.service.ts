@@ -14,11 +14,4 @@ export const settlementsService = {
       { auth: false },
     );
   },
-
-  process(settlementId: string) {
-    return request<Settlement>(
-      `/settlements/${encodeURIComponent(settlementId)}/process`,
-      { method: 'POST' },
-    );
-  },
 };

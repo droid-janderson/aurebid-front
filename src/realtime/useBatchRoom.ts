@@ -36,6 +36,9 @@ export function useBatchRoom(batchId: string | undefined, enabled: boolean) {
         void queryClient.invalidateQueries({
           queryKey: queryKeys.bids.forBatch(batchId!),
         });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.batchs.leading,
+        });
       };
 
       const offBid = client.on('bid:new', (payload) => {
@@ -107,6 +110,9 @@ export function useBatchRoom(batchId: string | undefined, enabled: boolean) {
           });
           void queryClient.invalidateQueries({
             queryKey: queryKeys.bids.mine,
+          });
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.batchs.leading,
           });
         }
 

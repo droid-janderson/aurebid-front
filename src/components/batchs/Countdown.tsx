@@ -18,8 +18,12 @@ export function Countdown({
 
   if (variant === 'large') {
     const units = [
-      { label: 'dias', value: parts.days },
-      { label: 'horas', value: parts.hours },
+      ...(parts.days > 0
+        ? [{ label: 'dias', value: parts.days }]
+        : []),
+      ...(parts.days > 0 || parts.hours > 0
+        ? [{ label: 'horas', value: parts.hours }]
+        : []),
       { label: 'min', value: parts.minutes },
       { label: 'seg', value: parts.seconds },
     ];

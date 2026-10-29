@@ -77,13 +77,25 @@ export function SellerDashboardPage() {
         }
         description="Publique cartas do catálogo, acompanhe a disputa e encerre leilões. O servidor valida prazos, lances e liquidação."
         actions={
-          <Link
-            to="/painel/lotes/novo"
-            className={buttonStyles("primary", "md")}
-          >
-            <Plus aria-hidden="true" className="size-4" />
-            Novo lote
-          </Link>
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="cursor-pointer"
+              onClick={() => void lotsQuery.refetch()}
+              loading={lotsQuery.isFetching}
+              leftIcon={<RefreshCw aria-hidden="true" className="size-3.5" />}
+            >
+              Atualizar
+            </Button>
+            <Link
+              to="/painel/lotes/novo"
+              className={buttonStyles("primary", "md")}
+            >
+              <Plus aria-hidden="true" className="size-4" />
+              Novo lote
+            </Link>
+          </>
         }
       />
 
@@ -145,7 +157,9 @@ export function SellerDashboardPage() {
                 const editable =
                   batch.status === "DRAFT" || batch.status === "SCHEDULED";
                 const canManage =
-                  editable || batch.status === "CANCELLED";
+                  editable ||
+                  batch.status === "CANCELLED" ||
+                  batch.status === "ACTIVE";
                 return (
                   <li
                     key={batch.id}
@@ -198,7 +212,7 @@ export function SellerDashboardPage() {
                           Gerenciar
                         </Link>
                       )}
-                      {!canManage && (
+                      {(!canManage || batch.status === "ACTIVE") && (
                         <Link
                           to={`/lotes/${batch.id}`}
                           className={buttonStyles("ghost", "sm")}

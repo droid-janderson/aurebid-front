@@ -150,6 +150,13 @@ export const handlers = [
     ),
   ),
 
+  http.get(`${api}/auctions/leading`, () =>
+    HttpResponse.json(
+      { success: true, data: [], meta: meta(0) },
+      { headers: serverHeaders },
+    ),
+  ),
+
   http.get(`${api}/auctions/:id`, ({ params, request }) => {
     const batch = batchById(String(params.id));
     if (!batch) return fail(404, 'NOT_FOUND', 'Batch not found');

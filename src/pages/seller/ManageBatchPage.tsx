@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -23,6 +23,7 @@ import { useToast } from "@/components/ui/Toast";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { BatchStatusBadge, SettlementStatusBadge } from "@/components/ui/Badge";
 import { FieldWrapper, Input, Select, Textarea } from "@/components/ui/Field";
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import { Button, buttonStyles } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { CardImage } from "@/components/cards/CardImage";
@@ -116,6 +117,7 @@ export function ManageBatchPage() {
   useDocumentTitle(batch ? `Gerenciar ${batch.title}` : "Gerenciar lote");
 
   const {
+    control,
     register,
     handleSubmit,
     setError,
@@ -326,9 +328,11 @@ export function ManageBatchPage() {
   const editable = batch.status === "DRAFT" || batch.status === "SCHEDULED";
   const canDelete =
     batch.status === "DRAFT" || batch.status === "CANCELLED";
-  const canCancel = !["ENDED", "SETTLED", "CANCELLED"].includes(batch.status);
+  const canCancel =
+    !["ENDED", "SETTLED", "CANCELLED"].includes(batch.status) &&
+    batch.bidCount === 0;
   const canEnd = batch.status === "ACTIVE";
-  const canPublish = editable;
+  const canPublish = batch.status === "DRAFT";
 
   const confirmCopy: Record<
     Exclude<PendingAction, null>,
@@ -349,7 +353,7 @@ export function ManageBatchPage() {
     cancel: {
       title: "Cancelar este lote?",
       description:
-        "O lote sai da vitrine e as reservas de saldo dos lances ativos são liberadas. Esta ação não pode ser desfeita.",
+        "O lote sai da vitrine e as reservas de saldo dos lances ativos são liberadas. Somente lotes sem lances podem ser cancelados. Esta ação não pode ser desfeita.",
       label: "Cancelar lote",
       tone: "danger",
     },
@@ -541,6 +545,12 @@ export function ManageBatchPage() {
                     : "Excluir rascunho"}
                 </Button>
               )}
+              {batch.status === "ACTIVE" && batch.bidCount > 0 && (
+                <p className="text-xs leading-relaxed text-mist-dim">
+                  Este lote já recebeu lances e não pode ser cancelado. Use
+                  “Encerrar agora” para concluir a disputa.
+                </p>
+              )}
               {!canPublish && !canEnd && !canCancel && !canDelete && (
                 <p className="text-xs leading-relaxed text-mist-dim">
                   Nenhuma ação de condução disponível para esta situação.
@@ -593,13 +603,21 @@ export function ManageBatchPage() {
                 error={errors.startingPrice?.message}
                 required
               >
-                <Input
-                  id="manage-starting"
-                  inputMode="decimal"
-                  disabled={!editable}
-                  className="numeric"
-                  invalid={Boolean(errors.startingPrice)}
-                  {...register("startingPrice")}
+                <Controller
+                  control={control}
+                  name="startingPrice"
+                  render={({ field }) => (
+                    <MoneyInput
+                      id="manage-starting"
+                      disabled={!editable}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      className="numeric"
+                      invalid={Boolean(errors.startingPrice)}
+                    />
+                  )}
                 />
               </FieldWrapper>
               <FieldWrapper
@@ -608,13 +626,21 @@ export function ManageBatchPage() {
                 error={errors.minimumIncrement?.message}
                 required
               >
-                <Input
-                  id="manage-increment"
-                  inputMode="decimal"
-                  disabled={!editable}
-                  className="numeric"
-                  invalid={Boolean(errors.minimumIncrement)}
-                  {...register("minimumIncrement")}
+                <Controller
+                  control={control}
+                  name="minimumIncrement"
+                  render={({ field }) => (
+                    <MoneyInput
+                      id="manage-increment"
+                      disabled={!editable}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      className="numeric"
+                      invalid={Boolean(errors.minimumIncrement)}
+                    />
+                  )}
                 />
               </FieldWrapper>
             </div>

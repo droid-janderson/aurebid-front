@@ -18,7 +18,7 @@ import { queryKeys } from "@/services/query-keys";
 import { useToast } from "@/components/ui/Toast";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { Button, buttonStyles } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Field";
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import {
   formatAmountInput,
   formatBRL,
@@ -133,6 +133,7 @@ export function BidPanel({ batch }: { batch: Batch }) {
           queryKey: queryKeys.bids.forBatch(batch.id),
         }),
         queryClient.invalidateQueries({ queryKey: queryKeys.bids.mine }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.batchs.leading }),
         queryClient.invalidateQueries({ queryKey: queryKeys.wallet.detail }),
       ]);
     } catch (error) {
@@ -334,12 +335,11 @@ export function BidPanel({ batch }: { batch: Batch }) {
               <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 font-mono text-sm text-mist-dim">
                 R$
               </span>
-              <Input
+              <MoneyInput
                 id="bid-amount"
-                inputMode="decimal"
                 value={value}
-                onChange={(event) => {
-                  setDraft(event.target.value);
+                onValueChange={(next) => {
+                  setDraft(next);
                   setBidError(null);
                 }}
                 onBlur={() => {

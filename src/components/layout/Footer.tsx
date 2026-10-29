@@ -4,7 +4,7 @@ import { BrandMark } from "@/components/ui/Logo";
 export function Footer() {
   return (
     <footer className="mt-24 border-t border-line/70 bg-surface/40">
-      <div className="flex justify-evenly max-w-7xl gap-10 px-10 py-8 sm:px-6 lg:px-8">
+      <div className="flex justify-evenly max-w-full gap-10 px-10 py-8 sm:px-6 lg:px-8">
         <div>
           <div className="flex items-center gap-2.5">
             <BrandMark className="size-8" />

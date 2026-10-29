@@ -204,20 +204,37 @@ export function HomePage() {
           title="Lotes em circulação"
           description="Filtre por situação, busque pela carta e acompanhe o preço atual de cada lote."
           action={
-            <p className="text-xs text-mist-dim">
-              {lotsQuery.data ? (
-                <>
-                  <span className="numeric text-chalk">
-                    {lotsQuery.data.meta.total}
-                  </span>{" "}
-                  {lotsQuery.data.meta.total === 1
-                    ? "lote encontrado"
-                    : "lotes encontrados"}
-                </>
-              ) : (
-                "Consultando catálogo"
-              )}
-            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-xs text-mist-dim">
+                {lotsQuery.data ? (
+                  <>
+                    <span className="numeric text-chalk">
+                      {lotsQuery.data.meta.total}
+                    </span>{" "}
+                    {lotsQuery.data.meta.total === 1
+                      ? "lote encontrado"
+                      : "lotes encontrados"}
+                  </>
+                ) : (
+                  "Consultando catálogo"
+                )}
+              </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="cursor-pointer"
+                onClick={() => {
+                  void lotsQuery.refetch();
+                  void spotlightQuery.refetch();
+                }}
+                loading={lotsQuery.isFetching || spotlightQuery.isFetching}
+                leftIcon={
+                  <RefreshCw aria-hidden="true" className="size-3.5" />
+                }
+              >
+                Atualizar
+              </Button>
+            </div>
           }
         />
 

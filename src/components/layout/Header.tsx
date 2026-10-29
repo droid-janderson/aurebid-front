@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   ChevronDown,
@@ -27,12 +27,21 @@ function initials(name: string) {
     .join("");
 }
 
-const publicNav = [{ to: "/", label: "Vitrine", end: true }];
+type NavItem = {
+  to: string;
+  label: string;
+  isActive: (pathname: string) => boolean;
+};
+
+const publicNav: NavItem[] = [
+  { to: "/", label: "Vitrine", isActive: (pathname) => pathname === "/" },
+];
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const { push } = useToast();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -43,17 +52,34 @@ export function Header() {
 
   const seller = isAuctioneer(user?.role);
 
-  const links = [
+  const links: NavItem[] = [
     ...publicNav,
     ...(isAuthenticated
       ? seller
         ? [
-            { to: "/painel", label: "Painel do leiloeiro", end: false },
-            { to: "/painel/resultados", label: "Resultados", end: false },
+            {
+              to: "/painel",
+              label: "Painel do leiloeiro",
+              isActive: (path: string) =>
+                path === "/painel" || path.startsWith("/painel/lotes"),
+            },
+            {
+              to: "/painel/resultados",
+              label: "Resultados",
+              isActive: (path: string) => path === "/painel/resultados",
+            },
           ]
         : [
-            { to: "/arremates", label: "Arremates", end: false },
-            { to: "/carteira", label: "Carteira", end: false },
+            {
+              to: "/arremates",
+              label: "Arremates",
+              isActive: (path: string) => path === "/arremates",
+            },
+            {
+              to: "/carteira",
+              label: "Carteira",
+              isActive: (path: string) => path === "/carteira",
+            },
           ]
       : []),
   ];
@@ -67,23 +93,24 @@ export function Header() {
           aria-label="Navegação principal"
           className="hidden items-center gap-1 lg:flex"
         >
-          {links.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.end}
-              className={({ isActive }) =>
-                cn(
+          {links.map((link) => {
+            const active = link.isActive(pathname);
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                aria-current={active ? "page" : undefined}
+                className={cn(
                   "rounded-md px-3 py-2 text-[0.8125rem] font-medium transition-colors",
-                  isActive
+                  active
                     ? "text-gold"
                     : "text-mist hover:bg-white/[0.04] hover:text-chalk",
-                )
-              }
-            >
-              {link.label}
-            </NavLink>
-          ))}
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
@@ -224,24 +251,25 @@ export function Header() {
           className="border-t border-line/70 bg-ink/95 px-4 pt-3 pb-5 lg:hidden"
         >
           <nav aria-label="Navegação mobile" className="flex flex-col gap-1">
-            {links.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                end={link.end}
-                onClick={() => setMobileOpen(false)}
-                className={({ isActive }) =>
-                  cn(
+            {links.map((link) => {
+              const active = link.isActive(pathname);
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={() => setMobileOpen(false)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
                     "rounded-lg px-3 py-2.5 text-sm font-medium",
-                    isActive
+                    active
                       ? "bg-gold/10 text-gold"
                       : "text-mist hover:bg-white/[0.04] hover:text-chalk",
-                  )
-                }
-              >
-                {link.label}
-              </NavLink>
-            ))}
+                  )}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
             {!isAuthenticated && (
               <div className="mt-3 flex flex-col gap-2 border-t border-line pt-3">
                 <Link

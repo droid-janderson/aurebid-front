@@ -1,176 +1,201 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Clock, Receipt, RefreshCw } from "lucide-react";
-import type { Settlement, SettlementStatus } from "@/types/domain";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowRight, Gavel, Receipt, RefreshCw } from "lucide-react";
+import type { Batch, Settlement } from "@/types/domain";
+import { batchsService } from "@/services/batchs.service";
 import { settlementsService } from "@/services/settlements.service";
 import { queryKeys } from "@/services/query-keys";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { useToast } from "@/components/ui/Toast";
+import { useBatchCatalogRoom } from "@/realtime/useBatchCatalogRoom";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SettlementStatusBadge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Countdown } from "@/components/batchs/Countdown";
+import { Button, buttonStyles } from "@/components/ui/Button";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { TableSkeleton } from "@/components/ui/Skeleton";
-import { CardImage } from "@/components/cards/CardImage";
+import { FilterTabs } from "@/components/ui/FilterTabs";
+import { RecordRow } from "@/components/ui/RecordRow";
+import { SearchField } from "@/components/ui/SearchField";
 import { formatBRL } from "@/utils/money";
 import { formatDateTime } from "@/utils/datetime";
 import { presentError } from "@/utils/errors";
-import { cn } from "@/utils/cn";
+import { cardSummaryLine, primaryCardImage } from "@/utils/product";
+import { publicBatchCode } from "@/utils/pseudonym";
+import { matchesQuery } from "@/utils/search";
 
-const statusFilters: Array<{ value: SettlementStatus | ""; label: string }> = [
-  { value: "", label: "Todas as situações" },
-  { value: "PENDING", label: "Aguardando" },
-  { value: "PROCESSING", label: "Em processamento" },
-  { value: "COMPLETED", label: "Concluídas" },
-  { value: "FAILED", label: "Falhas" },
-];
+type TabValue = "leading" | "completed";
 
-function SettlementItem({
+function LeadingRow({ batch }: { batch: Batch }) {
+  return (
+    <RecordRow
+      href={`/lotes/${batch.id}`}
+      imageSrc={primaryCardImage(batch)}
+      imageAlt={`Carta ${batch.title}`}
+      eyebrow={`${publicBatchCode(batch.id)} · Ao vivo`}
+      title={batch.title}
+      meta={
+        <>
+          <span>
+            Seu lance:{" "}
+            <span className="numeric text-gold-bright">
+              {formatBRL(batch.currentPrice)}
+            </span>
+          </span>
+          <Countdown target={batch.endsAt} variant="compact" />
+        </>
+      }
+      aside={
+        <>
+          <Badge tone="win">Liderando</Badge>
+          <Link
+            to={`/lotes/${batch.id}`}
+            className={buttonStyles("ghost", "sm")}
+          >
+            Ver lote
+            <ArrowRight aria-hidden="true" className="size-3.5" />
+          </Link>
+        </>
+      }
+    />
+  );
+}
+
+function SettlementRow({
   settlement,
   userId,
-  processing,
-  onProcess,
 }: {
   settlement: Settlement;
   userId: string | undefined;
-  processing: boolean;
-  onProcess: (settlement: Settlement) => void;
 }) {
   const isBuyer = settlement.buyerId === userId;
-  const canProcess = settlement.status === "PENDING" && isBuyer;
+  const counterpart = isBuyer
+    ? settlement.seller?.name
+    : settlement.buyer?.name;
 
   return (
-    <li className="surface-soft p-3">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <Link
-          to={`/lotes/${settlement.batchId}`}
-          className="flex min-w-0 flex-1 items-center gap-3"
-        >
-          <CardImage
-            src={settlement.batch?.imageUrl}
-            alt={`Carta ${settlement.batch?.title ?? "arrematada"}`}
-            className="h-20 w-16 shrink-0 rounded-lg"
-          />
-          <div className="min-w-0">
-            <p className="flex flex-wrap items-center gap-2 font-mono text-[0.5625rem] tracking-[0.12em] text-gold/80 uppercase">
-              {settlement.receiptNumber}
-              <span
-                className={cn(
-                  "rounded-full border px-1.5 py-0.5 text-[0.5rem] tracking-[0.1em]",
-                  isBuyer
-                    ? "border-info/30 text-info"
-                    : "border-line text-mist-dim",
-                )}
-              >
-                {isBuyer ? "Compra" : "Participação"}
-              </span>
-            </p>
-            <p className="mt-0.5 truncate text-sm font-medium text-chalk">
-              {settlement.batch?.title ?? "Lote"}
-            </p>
-            <p className="mt-1 text-[0.6875rem] text-mist-dim">
-              {isBuyer ? "Vendedor" : "Contraparte"}:{" "}
-              {isBuyer
-                ? (settlement.seller?.name ?? "participante")
-                : (settlement.buyer?.name ?? "participante")}{" "}
-              · {formatDateTime(settlement.completedAt ?? settlement.createdAt)}
-            </p>
-          </div>
-        </Link>
-
-        <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
-          <p className="numeric text-sm font-medium text-gold-bright">
+    <RecordRow
+      href={`/lotes/${settlement.batchId}`}
+      imageSrc={settlement.batch?.imageUrl ?? null}
+      imageAlt={`Carta ${settlement.batch?.title ?? "arrematada"}`}
+      eyebrow={`${settlement.receiptNumber} · ${publicBatchCode(settlement.batchId)}`}
+      title={settlement.batch?.title ?? "Lote"}
+      meta={
+        <>
+          <span className="numeric text-gold-bright">
             {formatBRL(settlement.amount)}
-          </p>
-          <SettlementStatusBadge status={settlement.status} />
-        </div>
-
-        <div className="flex items-center gap-2 border-t border-line/60 pt-3 sm:border-t-0 sm:pt-0">
-          {canProcess && (
-            <Button
-              variant="secondary"
-              size="sm"
-              className="cursor-pointer"
-              loading={processing}
-              onClick={() => onProcess(settlement)}
-            >
-              Processar
-            </Button>
-          )}
-          {settlement.status === "PENDING" && !canProcess && (
-            <span className="inline-flex items-center gap-1 text-[0.625rem] text-mist-dim">
-              <Clock aria-hidden="true" className="size-3" />
-              Aguardando
-            </span>
-          )}
+          </span>
+          <span>
+            {isBuyer ? "Vendedor" : "Contraparte"}:{" "}
+            {counterpart ?? "participante"}
+          </span>
+          <span>
+            {formatDateTime(settlement.completedAt ?? settlement.createdAt)}
+          </span>
+        </>
+      }
+      aside={
+        <>
+          <Badge tone="win">Concluído</Badge>
           {settlement.publicToken && (
             <Link
               to={`/recibo/${settlement.publicToken}`}
-              className="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-[0.6875rem] font-medium text-mist transition-colors hover:border-gold/40 hover:text-gold"
+              className={buttonStyles("secondary", "sm")}
             >
-              <Receipt aria-hidden="true" className="size-3" />
+              <Receipt aria-hidden="true" className="size-3.5" />
               Recibo
             </Link>
           )}
-        </div>
-      </div>
-    </li>
+        </>
+      }
+    />
   );
 }
 
 export function MySettlementsPage() {
   useDocumentTitle("Meus arremates");
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const { push } = useToast();
-  const [statusFilter, setStatusFilter] = useState<SettlementStatus | "">("");
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [tab, setTab] = useState<TabValue>("leading");
+  const [search, setSearch] = useState("");
 
-  const query = useQuery({
+  const settlementsQuery = useQuery({
     queryKey: queryKeys.settlements.mine,
     queryFn: () => settlementsService.listMine(1, 100),
     staleTime: 15_000,
   });
 
-  const settlements = useMemo(() => {
-    const all = query.data?.data ?? [];
-    return all.filter((settlement) => {
-      if (statusFilter && settlement.status !== statusFilter) return false;
-      return true;
-    });
-  }, [query.data, statusFilter, user?.id]);
+  const leadingQuery = useQuery({
+    queryKey: queryKeys.batchs.leading,
+    queryFn: () => batchsService.listLeading(),
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+  });
 
-  const process = async (settlement: Settlement) => {
-    setProcessingId(settlement.id);
-    try {
-      await settlementsService.process(settlement.id);
-      push({
-        title: "Processamento solicitado",
-        description:
-          "O servidor iniciou a liquidação. O status será atualizado conforme a confirmação.",
-        tone: "info",
-      });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.settlements.mine }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.wallet.detail }),
-      ]);
-    } catch (error) {
-      const presentation = presentError(error);
-      push({
-        title: presentation.title,
-        description: presentation.message,
-        tone: presentation.tone,
-      });
-    } finally {
-      setProcessingId(null);
-    }
+  const leading = useMemo(
+    () => leadingQuery.data?.data ?? [],
+    [leadingQuery.data],
+  );
+  const leadingIds = useMemo(() => leading.map((batch) => batch.id), [leading]);
+
+  useBatchCatalogRoom(leadingIds);
+
+  const settlements = useMemo(
+    () =>
+      (settlementsQuery.data?.data ?? []).filter(
+        (settlement) => settlement.status === "COMPLETED",
+      ),
+    [settlementsQuery.data],
+  );
+
+  const failedCount = useMemo(
+    () =>
+      (settlementsQuery.data?.data ?? []).filter(
+        (settlement) => settlement.status === "FAILED",
+      ).length,
+    [settlementsQuery.data],
+  );
+
+  const filteredLeading = useMemo(
+    () =>
+      leading.filter((batch) =>
+        matchesQuery(search, [
+          batch.title,
+          publicBatchCode(batch.id),
+          cardSummaryLine(batch),
+          batch.productSource,
+        ]),
+      ),
+    [leading, search],
+  );
+
+  const filteredSettlements = useMemo(
+    () =>
+      settlements.filter((settlement) =>
+        matchesQuery(search, [
+          settlement.batch?.title,
+          settlement.receiptNumber,
+          publicBatchCode(settlement.batchId),
+          settlement.buyer?.name,
+          settlement.seller?.name,
+        ]),
+      ),
+    [settlements, search],
+  );
+
+  const refetchAll = () => {
+    void settlementsQuery.refetch();
+    void leadingQuery.refetch();
   };
 
-  const error = query.error ? presentError(query.error) : null;
+  const activeQuery = tab === "leading" ? leadingQuery : settlementsQuery;
+  const error = activeQuery.error ? presentError(activeQuery.error) : null;
+  const isSearching = search.trim().length > 0;
+  const visibleCount =
+    tab === "leading" ? filteredLeading.length : filteredSettlements.length;
+  const totalCount = tab === "leading" ? leading.length : settlements.length;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
@@ -181,96 +206,149 @@ export function MySettlementsPage() {
             O que passou <em>pelo martelo.</em>
           </>
         }
-        description="Compras e vendas liquidadas, com recibo público e status atualizado pelo servidor. Nenhum valor é confirmado apenas neste navegador."
+        description="Lotes em que você está vencendo agora e arremates já liquidados, com recibo público. A liderança é definida pelo servidor e desaparece assim que outro licitante supera seu lance."
         actions={
-          <>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="cursor-pointer"
-              onClick={() => void query.refetch()}
-              loading={query.isFetching}
-              leftIcon={<RefreshCw aria-hidden="true" className="size-3.5" />}
-            >
-              Atualizar
-            </Button>
-          </>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="cursor-pointer"
+            onClick={refetchAll}
+            loading={
+              settlementsQuery.isFetching || leadingQuery.isFetching
+            }
+            leftIcon={<RefreshCw aria-hidden="true" className="size-3.5" />}
+          >
+            Atualizar
+          </Button>
         }
       />
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="scroll-thin flex gap-1 overflow-x-auto">
-          {statusFilters.map((filter) => (
-            <button
-              key={filter.value || "all"}
-              type="button"
-              onClick={() => setStatusFilter(filter.value)}
-              className={cn(
-                "shrink-0 rounded-full border px-2.5 py-1 text-[0.6875rem] transition-colors cursor-pointer",
-                statusFilter === filter.value
-                  ? "border-gold/40 bg-gold/[0.08] text-gold"
-                  : "border-line text-mist-dim hover:text-mist",
-              )}
-              aria-pressed={statusFilter === filter.value}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
+      <div className="mt-8 flex flex-col gap-4">
+        <FilterTabs
+          ariaLabel="Filtrar meus arremates"
+          value={tab}
+          onChange={(value) => {
+            setTab(value);
+            setSearch("");
+          }}
+          items={[
+            {
+              value: "leading",
+              label: "Na liderança",
+              count: leading.length,
+            },
+            {
+              value: "completed",
+              label: "Arremates",
+              count: settlements.length,
+            },
+          ]}
+        />
+
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          ariaLabel={
+            tab === "leading"
+              ? "Buscar nos lotes em que estou liderando"
+              : "Buscar nos meus arremates"
+          }
+          placeholder={
+            tab === "leading"
+              ? "Buscar na liderança"
+              : "Buscar nos arremates"
+          }
+        />
       </div>
 
       <div className="mt-5">
-        {query.isPending ? (
+        {activeQuery.isPending ? (
           <TableSkeleton rows={4} />
         ) : error ? (
           <ErrorState
             title={error.title}
             message={error.message}
-            onRetry={() => void query.refetch()}
+            onRetry={refetchAll}
           />
-        ) : settlements.length === 0 ? (
+        ) : visibleCount === 0 ? (
           <EmptyState
-            icon={Receipt}
+            icon={isSearching ? Receipt : tab === "leading" ? Gavel : Receipt}
             title={
-              query.data?.data.length === 0
-                ? "Nenhum arremate por aqui"
-                : "Nenhum resultado neste filtro"
+              isSearching
+                ? "Nenhum resultado na busca"
+                : tab === "leading"
+                  ? "Você não está liderando nenhum lote"
+                  : "Nenhum arremate concluído"
             }
             description={
-              query.data?.data.length === 0
-                ? "Quando você vencer um lote, o arremate e o recibo aparecerão nesta área."
-                : "Troque os filtros de situação para consultar outros arremates."
+              isSearching
+                ? "Ajuste os termos da busca ou limpe o campo para ver todos os registros."
+                : tab === "leading"
+                  ? "Dê um lance para assumir a liderança. O lote aparece aqui enquanto seu lance for o maior."
+                  : "Quando você vencer um lote e a liquidação for concluída pelo servidor, o arremate e o recibo aparecerão aqui."
             }
             action={
-              <Link
-                to="/"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-gold hover:text-gold-bright"
-              >
-                Explorar a vitrine
-                <ArrowRight aria-hidden="true" className="size-3.5" />
-              </Link>
+              isSearching ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={() => setSearch("")}
+                >
+                  Limpar busca
+                </Button>
+              ) : (
+                <Link
+                  to="/"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-gold hover:text-gold-bright"
+                >
+                  Explorar a vitrine
+                  <ArrowRight aria-hidden="true" className="size-3.5" />
+                </Link>
+              )
             }
           />
+        ) : tab === "leading" ? (
+          <>
+            <ul className="space-y-2">
+              {filteredLeading.map((batch) => (
+                <LeadingRow key={batch.id} batch={batch} />
+              ))}
+            </ul>
+            {isSearching && visibleCount < totalCount && (
+              <p className="mt-3 text-[0.6875rem] text-mist-dim">
+                {visibleCount} de {totalCount} lotes
+              </p>
+            )}
+          </>
         ) : (
-          <ul className="space-y-2">
-            {settlements.map((settlement) => (
-              <SettlementItem
-                key={settlement.id}
-                settlement={settlement}
-                userId={user?.id}
-                processing={processingId === settlement.id}
-                onProcess={(item) => void process(item)}
-              />
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-2">
+              {filteredSettlements.map((settlement) => (
+                <SettlementRow
+                  key={settlement.id}
+                  settlement={settlement}
+                  userId={user?.id}
+                />
+              ))}
+            </ul>
+            {isSearching && visibleCount < totalCount && (
+              <p className="mt-3 text-[0.6875rem] text-mist-dim">
+                {visibleCount} de {totalCount} arremates
+              </p>
+            )}
+          </>
         )}
       </div>
 
-      <InlineAlert tone="info" className="mt-6">
-        Processar uma liquidação apenas solicita a operação ao backend. A
-        conclusão, o crédito e o recibo são definidos pelo servidor — esta tela
-        não simula confirmações financeiras.
-      </InlineAlert>
+      {tab === "completed" && failedCount > 0 && (
+        <InlineAlert tone="warning" className="mt-6">
+          {failedCount === 1
+            ? "Um arremate seu está em análise pelo administrador."
+            : `${failedCount} arremates seus estão em análise pelo administrador.`}{" "}
+          Nenhuma ação é necessária da sua parte.
+        </InlineAlert>
+      )}
     </div>
   );
 }

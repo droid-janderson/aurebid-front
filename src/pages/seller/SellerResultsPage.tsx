@@ -5,40 +5,90 @@ import {
   ArrowRight,
   BadgeCheck,
   Banknote,
-  Clock,
   Receipt,
   RefreshCw,
 } from "lucide-react";
-import type { SettlementStatus } from "@/types/domain";
+import type { Settlement } from "@/types/domain";
 import { settlementsService } from "@/services/settlements.service";
 import { queryKeys } from "@/services/query-keys";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SettlementStatusBadge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Button, buttonStyles } from "@/components/ui/Button";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { TableSkeleton } from "@/components/ui/Skeleton";
-import { CardImage } from "@/components/cards/CardImage";
+import { FilterTabs } from "@/components/ui/FilterTabs";
+import { RecordRow } from "@/components/ui/RecordRow";
+import { SearchField } from "@/components/ui/SearchField";
 import { formatBRL, fromCents, toCents } from "@/utils/money";
 import { formatDateTime } from "@/utils/datetime";
 import { presentError } from "@/utils/errors";
-import { cn } from "@/utils/cn";
+import { publicBatchCode } from "@/utils/pseudonym";
+import { matchesQuery } from "@/utils/search";
 
-const tabs: Array<{ value: SettlementStatus | ""; label: string }> = [
-  { value: "", label: "Todas" },
-  { value: "COMPLETED", label: "Concluídas" },
-  { value: "PENDING", label: "Aguardando" },
-  { value: "PROCESSING", label: "Em curso" },
-  { value: "FAILED", label: "Falhas" },
-];
+type TabValue = "completed" | "failed";
+
+function SettlementRow({ settlement }: { settlement: Settlement }) {
+  const completed = settlement.status === "COMPLETED";
+
+  return (
+    <RecordRow
+      href={`/lotes/${settlement.batchId}`}
+      imageSrc={settlement.batch?.imageUrl ?? null}
+      imageAlt={`Carta ${settlement.batch?.title ?? "arrematada"}`}
+      eyebrow={`${settlement.receiptNumber} · ${publicBatchCode(settlement.batchId)}`}
+      title={settlement.batch?.title ?? "Lote"}
+      meta={
+        <>
+          <span className="numeric text-gold-bright">
+            {formatBRL(settlement.amount)}
+          </span>
+          <span>
+            Arrematado por {settlement.buyer?.name ?? "participante"}
+          </span>
+          <span>
+            {formatDateTime(settlement.completedAt ?? settlement.createdAt)}
+          </span>
+          {!completed && settlement.failureReason && (
+            <span className="text-loss">
+              Motivo: {settlement.failureReason}
+            </span>
+          )}
+        </>
+      }
+      aside={
+        completed ? (
+          <>
+            <span className="inline-flex items-center gap-1 text-[0.625rem] text-win">
+              <Banknote aria-hidden="true" className="size-3" />
+              Creditado
+            </span>
+            {settlement.publicToken && (
+              <Link
+                to={`/recibo/${settlement.publicToken}`}
+                className={buttonStyles("secondary", "sm")}
+              >
+                <Receipt aria-hidden="true" className="size-3.5" />
+                Recibo
+              </Link>
+            )}
+          </>
+        ) : (
+          <Badge tone="loss">Falha</Badge>
+        )
+      }
+    />
+  );
+}
 
 export function SellerResultsPage() {
   useDocumentTitle("Resultados do leiloeiro");
   const { user } = useAuth();
-  const [status, setStatus] = useState<SettlementStatus | "">("");
+  const [tab, setTab] = useState<TabValue>("completed");
+  const [search, setSearch] = useState("");
 
   const query = useQuery({
     queryKey: queryKeys.settlements.mine,
@@ -54,33 +104,44 @@ export function SellerResultsPage() {
     [query.data, user?.id],
   );
 
-  const filtered = status
-    ? sold.filter((settlement) => settlement.status === status)
-    : sold;
+  const completed = useMemo(
+    () => sold.filter((settlement) => settlement.status === "COMPLETED"),
+    [sold],
+  );
+
+  const failed = useMemo(
+    () => sold.filter((settlement) => settlement.status === "FAILED"),
+    [sold],
+  );
+
+  const filtered = useMemo(() => {
+    const items = tab === "completed" ? completed : failed;
+    return items.filter((settlement) =>
+      matchesQuery(search, [
+        settlement.batch?.title,
+        settlement.receiptNumber,
+        publicBatchCode(settlement.batchId),
+        settlement.buyer?.name,
+      ]),
+    );
+  }, [tab, completed, failed, search]);
 
   const totals = useMemo(() => {
-    const receivedCents = sold
-      .filter((settlement) => settlement.status === "COMPLETED")
-      .reduce((total, settlement) => total + toCents(settlement.amount), 0);
-    const pendingCents = sold
-      .filter(
-        (settlement) =>
-          settlement.status === "PENDING" || settlement.status === "PROCESSING",
-      )
-      .reduce((total, settlement) => total + toCents(settlement.amount), 0);
+    const receivedCents = completed.reduce(
+      (total, settlement) => total + toCents(settlement.amount),
+      0,
+    );
 
     return {
       received: fromCents(receivedCents),
-      pending: fromCents(pendingCents),
-      completed: sold.filter((s) => s.status === "COMPLETED").length,
-      open: sold.filter(
-        (s) => s.status === "PENDING" || s.status === "PROCESSING",
-      ).length,
-      failed: sold.filter((s) => s.status === "FAILED").length,
+      completed: completed.length,
+      failed: failed.length,
     };
-  }, [sold]);
+  }, [completed, failed]);
 
   const error = query.error ? presentError(query.error) : null;
+  const isSearching = search.trim().length > 0;
+  const totalCount = tab === "completed" ? completed.length : failed.length;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
@@ -91,7 +152,7 @@ export function SellerResultsPage() {
             Arremates <em>liquidados.</em>
           </>
         }
-        description="Acompanhe cada lote vendido, o status da liquidação e o valor efetivamente creditado. Somente liquidações concluídas entram no total recebido."
+        description="Acompanhe cada lote vendido, o valor efetivamente creditado e o recibo público. A liquidação é concluída automaticamente pelo servidor."
         actions={
           <Button
             variant="secondary"
@@ -106,7 +167,7 @@ export function SellerResultsPage() {
         }
       />
 
-      <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
         <div className="surface-soft p-4">
           <p className="text-[0.625rem] tracking-[0.08em] text-mist-dim uppercase">
             Total recebido
@@ -120,21 +181,10 @@ export function SellerResultsPage() {
         </div>
         <div className="surface-soft p-4">
           <p className="text-[0.625rem] tracking-[0.08em] text-mist-dim uppercase">
-            Em aberto
-          </p>
-          <p className="numeric mt-1.5 text-xl font-medium text-gold-bright">
-            {formatBRL(totals.pending)}
-          </p>
-          <p className="mt-0.5 text-[0.625rem] text-mist-dim">
-            {totals.open} aguardando crédito
-          </p>
-        </div>
-        <div className="surface-soft p-4">
-          <p className="text-[0.625rem] tracking-[0.08em] text-mist-dim uppercase">
             Arremates
           </p>
           <p className="numeric mt-1.5 text-xl font-medium text-chalk">
-            {sold.length}
+            {totals.completed}
           </p>
           <p className="mt-0.5 text-[0.625rem] text-mist-dim">
             lotes com vencedor
@@ -144,12 +194,7 @@ export function SellerResultsPage() {
           <p className="text-[0.625rem] tracking-[0.08em] text-mist-dim uppercase">
             Falhas
           </p>
-          <p
-            className={cn(
-              "numeric mt-1.5 text-xl font-medium",
-              totals.failed > 0 ? "text-loss" : "text-chalk",
-            )}
-          >
+          <p className="numeric mt-1.5 text-xl font-medium text-loss">
             {totals.failed}
           </p>
           <p className="mt-0.5 text-[0.625rem] text-mist-dim">
@@ -158,31 +203,37 @@ export function SellerResultsPage() {
         </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap items-center gap-2">
-        <div className="scroll-thin flex gap-1 overflow-x-auto rounded-lg border border-line bg-ink/40 p-0.5">
-          {tabs.map((tab) => (
-            <button
-              key={tab.value || "all"}
-              type="button"
-              onClick={() => setStatus(tab.value)}
-              className={cn(
-                "shrink-0 rounded-md px-3 py-1.5 text-[0.75rem] font-medium transition-colors cursor-pointer",
-                status === tab.value
-                  ? "bg-raised text-chalk"
-                  : "text-mist-dim hover:text-mist",
-              )}
-              aria-pressed={status === tab.value}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-        <p className="ml-auto text-[0.6875rem] text-mist-dim">
-          {filtered.length} de {sold.length} arremates
-        </p>
+      <div className="mt-8 flex flex-col gap-4">
+        <FilterTabs
+          ariaLabel="Filtrar resultados"
+          value={tab}
+          onChange={(value) => {
+            setTab(value);
+            setSearch("");
+          }}
+          items={[
+            { value: "completed", label: "Concluídos", count: completed.length },
+            { value: "failed", label: "Falhas", count: failed.length },
+          ]}
+        />
+
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          ariaLabel={
+            tab === "completed"
+              ? "Buscar nos arremates concluídos"
+              : "Buscar nas liquidações com falha"
+          }
+          placeholder={
+            tab === "completed"
+              ? "Buscar nos concluídos"
+              : "Buscar nas falhas"
+          }
+        />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
         {query.isPending ? (
           <TableSkeleton rows={5} />
         ) : error ? (
@@ -193,19 +244,32 @@ export function SellerResultsPage() {
           />
         ) : filtered.length === 0 ? (
           <EmptyState
-            icon={sold.length === 0 ? Receipt : BadgeCheck}
+            icon={isSearching ? Receipt : tab === "failed" ? Receipt : BadgeCheck}
             title={
-              sold.length === 0
-                ? "Nenhum arremate registrado"
-                : "Nenhum resultado neste filtro"
+              isSearching
+                ? "Nenhum resultado na busca"
+                : tab === "completed"
+                  ? "Nenhum arremate concluído"
+                  : "Nenhuma falha registrada"
             }
             description={
-              sold.length === 0
-                ? "Quando um dos seus lotes for encerrado com lance vencedor, a liquidação aparecerá aqui."
-                : "Troque o filtro para consultar outros status de liquidação."
+              isSearching
+                ? "Ajuste os termos da busca ou limpe o campo para ver todos os registros."
+                : tab === "completed"
+                  ? "Quando um dos seus lotes for encerrado com lance vencedor e a liquidação for concluída pelo servidor, o resultado aparecerá aqui."
+                  : "Liquidações com erro aparecem aqui e ficam sob análise do administrador."
             }
             action={
-              sold.length === 0 ? (
+              isSearching ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={() => setSearch("")}
+                >
+                  Limpar busca
+                </Button>
+              ) : tab === "completed" && sold.length === 0 ? (
                 <Link
                   to="/painel"
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-gold hover:text-gold-bright"
@@ -217,77 +281,26 @@ export function SellerResultsPage() {
             }
           />
         ) : (
-          <ul className="space-y-2">
-            {filtered.map((settlement) => (
-              <li
-                key={settlement.id}
-                className="surface-soft flex flex-col gap-4 p-3 sm:flex-row sm:items-center"
-              >
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <CardImage
-                    src={settlement.batch?.imageUrl}
-                    alt={`Carta ${settlement.batch?.title ?? "arrematada"}`}
-                    className="h-20 w-16 shrink-0 rounded-lg"
-                  />
-                  <div className="min-w-0">
-                    <p className="font-mono text-[0.5625rem] tracking-[0.12em] text-gold/80 uppercase">
-                      {settlement.receiptNumber}
-                    </p>
-                    <p className="mt-0.5 truncate text-sm font-medium text-chalk">
-                      {settlement.batch?.title ?? "Lote"}
-                    </p>
-                    <p className="mt-1 text-[0.6875rem] text-mist-dim">
-                      Arrematado por {settlement.buyer?.name ?? "participante"}{" "}
-                      ·{" "}
-                      {formatDateTime(
-                        settlement.completedAt ?? settlement.createdAt,
-                      )}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-end justify-between gap-4 sm:flex-col sm:items-end sm:justify-center">
-                  <p className="numeric text-sm font-medium text-gold-bright">
-                    {formatBRL(settlement.amount)}
-                  </p>
-                  <SettlementStatusBadge status={settlement.status} />
-                </div>
-
-                <div className="flex items-center gap-2 border-t border-line/60 pt-3 sm:border-t-0 sm:pt-0">
-                  {settlement.status === "PENDING" && (
-                    <span className="inline-flex items-center gap-1 text-[0.625rem] text-mist-dim">
-                      <Clock aria-hidden="true" className="size-3" />
-                      Processamento
-                    </span>
-                  )}
-                  {settlement.status === "COMPLETED" && (
-                    <span className="inline-flex items-center gap-1 text-[0.625rem] text-win">
-                      <Banknote aria-hidden="true" className="size-3" />
-                      Creditado
-                    </span>
-                  )}
-                  {settlement.publicToken && (
-                    <Link
-                      to={`/recibo/${settlement.publicToken}`}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-[0.6875rem] font-medium text-mist transition-colors hover:border-gold/40 hover:text-gold"
-                    >
-                      <Receipt aria-hidden="true" className="size-3" />
-                      Recibo
-                    </Link>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-2">
+              {filtered.map((settlement) => (
+                <SettlementRow
+                  key={settlement.id}
+                  settlement={settlement}
+                />
+              ))}
+            </ul>
+            {isSearching && filtered.length < totalCount && (
+              <p className="mt-3 text-[0.6875rem] text-mist-dim">
+                {filtered.length} de {totalCount} registros
+              </p>
+            )}
+          </>
         )}
       </div>
 
-      {sold.some((settlement) => settlement.status === "FAILED") && (
-        <InlineAlert
-          tone="warning"
-          title="Liquidações com falha"
-          className="mt-5"
-        >
+      {tab === "failed" && failed.length > 0 && (
+        <InlineAlert tone="warning" className="mt-6">
           Falhas exigem atuação do administrador. O valor não é contabilizado no
           total recebido enquanto o status não for concluído pelo servidor.
         </InlineAlert>
