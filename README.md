@@ -67,7 +67,7 @@ A Vercel é responsável por disponibilizar a interface web publicamente, permit
 O frontend consome a API do AureBid para consultar lotes, registrar lances e acessar os demais recursos da plataforma. O Socket.IO é utilizado para receber atualizações em tempo real sobre lances e mudanças no estado dos leilões.
 
 As URLs da API e as configurações de conexão devem corresponder ao ambiente de execução. Também é necessário que o backend permita a origem do frontend nas configurações de CORS, tanto para requisições HTTP quanto para conexões Socket.IO.
-> A aplicação está publicada e pode ser acessada em **[aurebid.vercel.app](aurebid.vercel.app)**
+> A aplicação está publicada e pode ser acessada em **[https://aurebid.vercel.app](https://aurebid.vercel.app)**
 
 ### Scripts
 
